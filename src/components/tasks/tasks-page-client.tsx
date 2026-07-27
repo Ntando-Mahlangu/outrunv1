@@ -9,7 +9,7 @@ import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
 import { ImpactBadge } from "@/components/ui/badge";
-import type { CoachFeedbackData } from "@/lib/ceo-agent/coach-schema";
+import type { CoachFeedbackData } from "@/lib/growth-partner/coach-schema";
 import { SplitHeading } from "@/components/motion/split-heading";
 import { Magnetic } from "@/components/motion/magnetic";
 import { readJsonSafely } from "@/lib/fetch-json";

@@ -49,7 +49,7 @@ const AUTHENTICATED_PAGES = [
   "/settings/api-keys",
   "/settings/webhooks",
   "/billing",
-  "/ceo-agent",
+  "/growth-partner",
   "/seo",
 ];
 

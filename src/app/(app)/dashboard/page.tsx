@@ -4,9 +4,9 @@ import { getCurrentSession } from "@/lib/session";
 import { getCurrentOrganization } from "@/lib/org";
 import { findLatestForOrg } from "@/lib/repositories/growth-blueprint-repository";
 import { getTodaysMission, getMissionActionHref } from "@/lib/dashboard/mission";
-import { getBusinessHealth, type HealthCategory } from "@/lib/ceo-agent/health";
-import { getBiggestWinThisWeek } from "@/lib/ceo-agent/weekly-win";
-import { getRisksAndOpportunities } from "@/lib/ceo-agent/risks";
+import { getBusinessHealth, type HealthCategory } from "@/lib/growth-partner/health";
+import { getBiggestWinThisWeek } from "@/lib/growth-partner/weekly-win";
+import { getRisksAndOpportunities } from "@/lib/growth-partner/risks";
 import { getBusinessSnapshot } from "@/lib/dashboard/business-snapshot";
 import { getCampaignOverview } from "@/lib/dashboard/campaign-overview";
 import { getGrowthStreaks } from "@/lib/dashboard/streaks";
@@ -43,7 +43,7 @@ const QUICK_ACTIONS = [
   { href: "/prospects", label: "Find Companies" },
   { href: "/campaigns/new", label: "Launch Campaign" },
   { href: "/seo", label: "Analyse Website" },
-  { href: "/ceo-agent/reviews", label: "Run Weekly Review" },
+  { href: "/growth-partner/reviews", label: "Run Weekly Review" },
   { href: "/blueprint", label: "Update Growth Blueprint" },
   { href: "/tasks", label: "Growth Tasks" },
   { href: "/goals", label: "Goals" },

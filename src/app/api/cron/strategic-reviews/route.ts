@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { runStrategicReviewTick } from "@/lib/ceo-agent/strategic-review";
+import { runStrategicReviewTick } from "@/lib/growth-partner/strategic-review";
 import { RateLimitError } from "@/lib/errors";
 import { checkRateLimit, getClientIp, RATE_LIMITS } from "@/lib/rate-limit";
 import { captureError } from "@/lib/observability";

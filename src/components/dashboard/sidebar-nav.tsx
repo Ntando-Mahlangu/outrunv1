@@ -16,7 +16,7 @@ const NAV_ITEMS = [
   { href: "/prospects", label: "Prospects" },
   { href: "/campaigns", label: "Campaigns" },
   { href: "/seo", label: "SEO" },
-  { href: "/ceo-agent", label: "Ask the CEO" },
+  { href: "/growth-partner", label: "Growth Partner" },
   { href: "/memory", label: "AI Memory" },
   { href: "/settings/team", label: "Team" },
   { href: "/settings/brand-voice", label: "Brand Voice" },

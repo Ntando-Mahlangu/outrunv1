@@ -85,7 +85,7 @@ export function GoalsPageClient({ initialGoals }: { initialGoals: Goal[] }) {
           className="text-2xl font-light tracking-tight text-[var(--color-text-primary)]"
         />
         <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-          The CEO Agent and Growth Blueprint read these to keep every recommendation aligned with
+          Your Growth Partner and Growth Blueprint read these to keep every recommendation aligned with
           what you&apos;re actually trying to achieve.
         </p>
       </div>
@@ -138,7 +138,7 @@ export function GoalsPageClient({ initialGoals }: { initialGoals: Goal[] }) {
         </h2>
         {active.length === 0 ? (
           <p className="text-sm text-[var(--color-text-muted)]">
-            No goals set yet — add one above so the CEO Agent and Growth Blueprint can align
+            No goals set yet — add one above so your Growth Partner and Growth Blueprint can align
             recommendations to it.
           </p>
         ) : (

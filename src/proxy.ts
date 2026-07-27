@@ -10,7 +10,7 @@ const PROTECTED_PREFIXES = [
   "/prospects",
   "/campaigns",
   "/memory",
-  "/ceo-agent",
+  "/growth-partner",
   "/seo",
   "/settings",
   "/billing",

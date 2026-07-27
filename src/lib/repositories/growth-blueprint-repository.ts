@@ -19,7 +19,7 @@ function reviveBlueprintDates(blueprint: LatestBlueprint): LatestBlueprint {
 }
 
 // docs/outrun/12 "CACHING" — the latest Blueprint (and the Growth Score
-// living on it) is read on nearly every dashboard/CEO-agent request but
+// living on it) is read on nearly every dashboard/growth-partner request but
 // only changes when a new Blueprint version is generated
 // (src/lib/growth-blueprint/generate.ts, which calls revalidateTag on the
 // same tag right after its write transaction commits).

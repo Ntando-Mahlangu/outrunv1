@@ -213,7 +213,7 @@ real sends without deliberately configuring this.
 docs/outrun/10 "STRATEGIC REVIEWS" — weekly, monthly, and quarterly
 reviews generated from real events, campaign activity, and Growth
 Blueprint score changes in that period. Owners can generate one on demand
-from `/ceo-agent/reviews`, but "generate automatically" needs the same
+from `/growth-partner/reviews`, but "generate automatically" needs the same
 kind of scheduler as Autonomous Growth Mode above, hitting
 `GET /api/cron/strategic-reviews` once a day — it checks every workspace
 and only generates a review once enough time has passed since that
@@ -313,7 +313,7 @@ with a real read/write path, not just an empty schema addition:
 - **Goal** (`/goals`) — supersedes `BusinessProfile.mainGoal` (a single
   free-text field) with a real, trackable list. Active goals are read
   into the Business Brain context (`src/lib/memory/context.ts`) so every
-  CEO Agent response and Strategic Review is generated with them in view.
+  Growth Partner response and Strategic Review is generated with them in view.
 - **Contact** (`ContactsPanel` on a prospect's detail page) — a named
   person at a Company, distinct from `Company.contactEmail` (a generic
   inbox).
@@ -395,7 +395,7 @@ that wasn't there before:
   campaigns).
 - **Right sidebar** (`src/components/dashboard/right-sidebar.tsx`, data
   from `src/lib/dashboard/right-sidebar-data.ts`) — AI Assistant links
-  to `/ceo-agent` with a teaser drawn from the same risk/opportunity
+  to `/growth-partner` with a teaser drawn from the same risk/opportunity
   signals already shown on the dashboard; Recent Notifications and
   Upcoming Tasks are real queries (tasks without a due date sort by
   impact, since blueprint-generated tasks rarely have one); Growth Tip
@@ -518,14 +518,14 @@ found" view.
   and isn't required to satisfy that use case. Gated behind a new
   `FEATURE_FLAGS.PROSPECTS_EXPORT` flag (Starter and above, same tiers as
   `GROWTH_BLUEPRINT_EXPORT`) — a new flag rather than reusing the
-  Blueprint-specific one, since campaign/CEO-agent/memory exports set the
+  Blueprint-specific one, since campaign/growth-partner/memory exports set the
   precedent of each export having its own gate rather than sharing one.
 
 ## 9k. Autonomous Growth Mode opportunity-finding
 
 docs/outrun/07 "AUTONOMOUS GROWTH MODE" lists nine signal types Outrun
-should continuously watch for. `src/lib/ceo-agent/opportunity-feed.ts`
-(already the shared "Opportunity Feed" engine behind `/ceo-agent`, now
+should continuously watch for. `src/lib/growth-partner/opportunity-feed.ts`
+(already the shared "Opportunity Feed" engine behind `/growth-partner`, now
 also rendered on `/campaigns` under an "Autonomous Growth Mode" heading)
 gained two new real, deterministic signals on top of its existing
 Growth-Blueprint/SEO ones:

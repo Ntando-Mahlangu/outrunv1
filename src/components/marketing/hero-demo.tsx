@@ -9,7 +9,7 @@ import { CountUp } from "@/components/motion/count-up";
 // docs/outrun/02 "HERO VISUAL" — a realistic interactive dashboard
 // animation, not a static screenshot: a small browser-chrome frame tours
 // several real product surfaces (onboarding, Growth Blueprint, prospects,
-// campaigns, CEO Agent, dashboard) instead of one static card, so the
+// campaigns, Growth Partner, dashboard) instead of one static card, so the
 // hero itself demonstrates the platform's breadth. Stylized placeholder
 // data only — never a real business's numbers — so it never risks being
 // read as a fabricated result; only the labeled Wow Demo section further
@@ -119,7 +119,7 @@ function CampaignScene() {
   );
 }
 
-function CeoAgentScene() {
+function GrowthPartnerScene() {
   return (
     <div className="space-y-2">
       <p className="text-xs uppercase tracking-wide text-[var(--color-accent-text)]">
@@ -154,7 +154,7 @@ const SCENES = [
   { path: "/blueprint", eyebrow: "Growth Blueprint generated", Scene: BlueprintScene },
   { path: "/prospects", eyebrow: "Best-fit prospects found", Scene: ProspectsScene },
   { path: "/campaigns/new", eyebrow: "Campaign prepared", Scene: CampaignScene },
-  { path: "/ceo-agent", eyebrow: "Daily briefing ready", Scene: CeoAgentScene },
+  { path: "/growth-partner", eyebrow: "Daily briefing ready", Scene: GrowthPartnerScene },
   { path: "/dashboard", eyebrow: "Ready to launch", Scene: LaunchScene },
 ] as const;
 

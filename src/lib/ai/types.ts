@@ -28,6 +28,6 @@ export type GenerateTextInput = {
 export interface AIProvider {
   generateObject<T>(input: GenerateObjectInput<T>): Promise<T>;
   /** Free-form conversational response — used where forcing a structured
-   * tool call would make the reply feel robotic (e.g. CEO Agent chat). */
+   * tool call would make the reply feel robotic (e.g. Growth Partner chat). */
   generateText(input: GenerateTextInput): Promise<string>;
 }

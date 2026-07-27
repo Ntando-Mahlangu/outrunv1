@@ -37,7 +37,7 @@ The full V1 specification is split into focused documents under
 | `07-outreach-engine-campaigns.md` | Campaign builder flow, AI-generated outreach, follow-ups, Autonomous Growth Mode, A/B testing |
 | `08-business-brain-ai-memory.md` | The persistent memory layer every AI feature and future agent reads from |
 | `09-seo-growth-engine.md` | AI SEO consultant: crawl, health score, keyword/content generation, local SEO |
-| `10-ceo-agent-growth-advisor.md` | The flagship AI CEO Agent: daily briefing, decision engine, risk detection, what-if simulator |
+| `10-ai-growth-partner.md` | The flagship AI Growth Partner: daily briefing, decision engine, risk detection, what-if simulator |
 | `11-integrations-api-architecture.md` | Provider-abstraction rules for CRM/email/calendar/analytics/payments/AI providers, webhooks, events |
 | `12-database-architecture-scalability.md` | Core tables, multi-tenancy, caching, background jobs, scalability targets |
 | `13-backend-frontend-architecture.md` | Recommended stack, project structure, service/repository layering, definition of done |

@@ -7,7 +7,7 @@ import { SignOutButton } from "@/components/sign-out-button";
 import { WorkspaceSwitcher } from "@/components/team/workspace-switcher";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { GlobalSearch } from "@/components/dashboard/global-search";
-import { GlobalChatWidget } from "@/components/ceo-agent/global-chat-widget";
+import { GlobalChatWidget } from "@/components/growth-partner/global-chat-widget";
 import { Logo } from "@/components/brand/logo";
 import { GenerativeLattice } from "@/components/motion/backgrounds";
 
