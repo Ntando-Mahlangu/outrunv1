@@ -21,28 +21,44 @@ const PROTECTED_PREFIXES = [
 // calls out to — every other integration (Google/Microsoft sign-in) is a
 // full-page redirect, not something rendered inside this origin, so it
 // needs no CSP allowance here.
+// docs/outrun/15 — analytics is opt-in via NEXT_PUBLIC_GA_MEASUREMENT_ID, so
+// the CSP only widens for these Google domains when it's actually configured
+// (see src/components/analytics/analytics-scripts.tsx). 'strict-dynamic'
+// already covers script loading for browsers that support it; the explicit
+// googletagmanager.com host is Google's documented fallback for the ones
+// that don't (older Safari).
+const ANALYTICS_ENABLED = Boolean(process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID);
+
 function buildCsp(nonce: string): string {
   // React's dev mode reconstructs component stacks via eval() for better
   // error messages — "React will never use eval() in production mode" (its
   // own console warning) is the guarantee that makes this safe to scope to
   // non-production only.
+  const analyticsScriptSrc = ANALYTICS_ENABLED ? " https://www.googletagmanager.com" : "";
   const scriptSrc =
     process.env.NODE_ENV === "production"
-      ? `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://cdn.paddle.com`
-      : `script-src 'self' 'unsafe-eval' 'nonce-${nonce}' 'strict-dynamic' https://cdn.paddle.com`;
+      ? `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://cdn.paddle.com${analyticsScriptSrc}`
+      : `script-src 'self' 'unsafe-eval' 'nonce-${nonce}' 'strict-dynamic' https://cdn.paddle.com${analyticsScriptSrc}`;
+
+  const analyticsConnectSrc = ANALYTICS_ENABLED
+    ? " https://www.googletagmanager.com https://www.google-analytics.com https://*.google-analytics.com https://www.googleadservices.com https://googleads.g.doubleclick.net"
+    : "";
+  const analyticsImgSrc = ANALYTICS_ENABLED
+    ? " https://www.googletagmanager.com https://www.google-analytics.com https://googleads.g.doubleclick.net https://www.googleadservices.com"
+    : "";
 
   return [
     "default-src 'self'",
     scriptSrc,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' blob: data: https://cdn.paddle.com",
+    `img-src 'self' blob: data: https://cdn.paddle.com${analyticsImgSrc}`,
     "font-src 'self' data:",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
     "frame-src 'self' https://*.paddle.com",
     "frame-ancestors 'none'",
-    "connect-src 'self' https://*.paddle.com",
+    `connect-src 'self' https://*.paddle.com${analyticsConnectSrc}`,
     "upgrade-insecure-requests",
   ].join("; ");
 }
