@@ -5,9 +5,22 @@ on:
     - cron: "*/5 * * * *"
   workflow_dispatch:
 
+# Runs every 5 minutes — without this, a sweep that (for whatever reason)
+# runs long would overlap with the next one indefinitely rather than the
+# newer trigger just waiting its turn.
+concurrency:
+  group: webhook-sweep
+  cancel-in-progress: false
+
 jobs:
   sweep:
     runs-on: ubuntu-latest
+    # Belt-and-suspenders alongside curl's own --max-time below: this is
+    # what actually stops a hung run from silently occupying the schedule
+    # for the better part of an hour instead of failing loudly within
+    # minutes (see the 2026-08-06 incident — two consecutive runs sat for
+    # ~15 minutes each before being force-cancelled).
+    timeout-minutes: 3
     steps:
       - name: Call webhook delivery sweep endpoint
         run: |
@@ -15,5 +28,5 @@ jobs:
             echo "APP_URL and CRON_SECRET repo secrets are not set — skipping. See DEPLOYMENT.md."
             exit 0
           fi
-          curl -sf -X GET "${{ secrets.APP_URL }}/api/cron/webhooks" \
+          curl -sf --max-time 60 -X GET "${{ secrets.APP_URL }}/api/cron/webhooks" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
