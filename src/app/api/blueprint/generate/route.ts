@@ -3,7 +3,7 @@ import { after } from "next/server";
 import { UsageEventType } from "@prisma/client";
 import { getCurrentSession } from "@/lib/session";
 import { getCurrentOrganization } from "@/lib/org";
-import { checkAndRecordUsage } from "@/lib/billing/usage";
+import { assertUsageAvailable } from "@/lib/billing/usage";
 import { enqueueJob, runJob } from "@/lib/jobs/queue";
 import { UserFacingError, RateLimitError } from "@/lib/errors";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
@@ -37,7 +37,13 @@ export async function POST() {
 
   try {
     await checkRateLimit(`ai:${organization.id}`, RATE_LIMITS.AI.limit, RATE_LIMITS.AI.windowSeconds);
-    await checkAndRecordUsage(organization.id, UsageEventType.BLUEPRINT_GENERATION);
+    // Check-only here — the actual generation runs later, asynchronously
+    // (see runJob() below), so recording usage happens there, only once
+    // it actually succeeds. Recording it here would burn the org's
+    // allotment for an attempt that hasn't happened yet, and previously
+    // did exactly that whenever generation failed downstream (e.g. a
+    // misconfigured AI provider) — see src/lib/jobs/queue.ts.
+    await assertUsageAvailable(organization.id, UsageEventType.BLUEPRINT_GENERATION);
 
     const job = await enqueueJob(organization.id, "BLUEPRINT_GENERATION", {});
     after(() => runJob(job.id));
