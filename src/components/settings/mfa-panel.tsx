@@ -5,6 +5,7 @@ import QRCode from "qrcode";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { FormError } from "@/components/ui/form-error";
 import { Badge } from "@/components/ui/badge";
@@ -142,9 +143,8 @@ export function MfaPanel({ initiallyEnabled }: { initiallyEnabled: boolean }) {
         <FormError message={error} />
         <div className="space-y-2">
           <Label htmlFor="mfa-enable-password">Confirm your password</Label>
-          <Input
+          <PasswordInput
             id="mfa-enable-password"
-            type="password"
             autoComplete="current-password"
             autoFocus
             required
@@ -234,9 +234,8 @@ export function MfaPanel({ initiallyEnabled }: { initiallyEnabled: boolean }) {
         <FormError message={error} />
         <div className="space-y-2">
           <Label htmlFor="mfa-disable-password">Confirm your password</Label>
-          <Input
+          <PasswordInput
             id="mfa-disable-password"
-            type="password"
             autoComplete="current-password"
             autoFocus
             required
@@ -265,9 +264,8 @@ export function MfaPanel({ initiallyEnabled }: { initiallyEnabled: boolean }) {
         </p>
         <div className="space-y-2">
           <Label htmlFor="mfa-regen-password">Confirm your password</Label>
-          <Input
+          <PasswordInput
             id="mfa-regen-password"
-            type="password"
             autoComplete="current-password"
             autoFocus
             required

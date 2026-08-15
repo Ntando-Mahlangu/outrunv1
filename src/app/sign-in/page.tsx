@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { FormError } from "@/components/ui/form-error";
@@ -129,9 +130,8 @@ export default function SignInPage() {
                   {t("forgotPassword")}
                 </Link>
               </div>
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 autoComplete="current-password"
                 required
                 value={password}
