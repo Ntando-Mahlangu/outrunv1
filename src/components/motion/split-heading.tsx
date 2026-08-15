@@ -43,21 +43,28 @@ export function SplitHeading({
               const flatIndex = lineStartIndex[lineI]! + i;
               const wc = typeof wordClassName === "function" ? wordClassName(flatIndex) : wordClassName;
               return (
-                <motion.span
-                  key={i}
-                  className={`inline-block ${i < words.length - 1 ? "mr-[0.25em]" : ""} ${wc}`}
-                  variants={{
-                    hidden: { opacity: 0, y: reduceMotion ? 0 : 16, filter: reduceMotion ? "none" : "blur(6px)" },
-                    show: {
-                      opacity: 1,
-                      y: 0,
-                      filter: "blur(0px)",
-                      transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] },
-                    },
-                  }}
-                >
-                  {word}
-                </motion.span>
+                // A literal space (not just a margin) between each animated
+                // word span — without it, the rendered text content has no
+                // whitespace between words at all ("StopGuessing." instead
+                // of "Stop Guessing."), which is wrong for screen readers,
+                // copy-paste, and anything else reading the real text.
+                <span key={i}>
+                  <motion.span
+                    className={`inline-block ${wc}`}
+                    variants={{
+                      hidden: { opacity: 0, y: reduceMotion ? 0 : 16, filter: reduceMotion ? "none" : "blur(6px)" },
+                      show: {
+                        opacity: 1,
+                        y: 0,
+                        filter: "blur(0px)",
+                        transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] },
+                      },
+                    }}
+                  >
+                    {word}
+                  </motion.span>
+                  {i < words.length - 1 ? " " : ""}
+                </span>
               );
             })}
           </span>
