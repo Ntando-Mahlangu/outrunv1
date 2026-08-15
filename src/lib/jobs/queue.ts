@@ -1,6 +1,7 @@
 import type { Job, JobType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { captureError } from "@/lib/observability";
+import { UserFacingError } from "@/lib/errors";
 import { generateGrowthBlueprint } from "@/lib/growth-blueprint/generate";
 import { analyzeSEO } from "@/lib/seo/analyze";
 import { createCampaign } from "@/lib/campaigns/create";
@@ -138,7 +139,15 @@ export async function runJob(jobId: string): Promise<void> {
       data: {
         status: "FAILED",
         completedAt: new Date(),
-        errorMessage: error instanceof Error ? error.message : "Something went wrong.",
+        // Only a UserFacingError's message is safe to show verbatim
+        // (src/lib/errors.ts) — anything else (config issues, provider
+        // outages, unexpected exceptions) must never reach the client,
+        // since job.errorMessage is returned as-is by /api/jobs/[id] and
+        // rendered directly (e.g. src/app/blueprint/generating/page.tsx).
+        errorMessage:
+          error instanceof UserFacingError
+            ? error.message
+            : "Something went wrong on our end. Please try again in a moment.",
       },
     });
   }
