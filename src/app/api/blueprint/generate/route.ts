@@ -6,6 +6,7 @@ import { getCurrentOrganization } from "@/lib/org";
 import { prisma } from "@/lib/prisma";
 import { assertUsageAvailable } from "@/lib/billing/usage";
 import { enqueueJob, runJob } from "@/lib/jobs/queue";
+import { findLatestForOrg } from "@/lib/repositories/growth-blueprint-repository";
 import { UserFacingError, RateLimitError } from "@/lib/errors";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { captureError } from "@/lib/observability";
@@ -76,7 +77,18 @@ export async function POST() {
       return NextResponse.json({ error: error.message }, { status: 429 });
     }
     if (error instanceof UserFacingError) {
-      return NextResponse.json({ error: error.message }, { status: 403 });
+      // Onboarding sends every re-submission here to refresh the Blueprint
+      // (see src/app/onboarding/page.tsx), but Free only ever grants one —
+      // when an org has already used it, this is never the org's first
+      // Blueprint, so the caller (src/app/blueprint/generating/page.tsx)
+      // uses this to send the user back to the one they already have
+      // instead of dead-ending on an upgrade wall with no way into the
+      // rest of the app.
+      const existingBlueprint = await findLatestForOrg(organization.id);
+      return NextResponse.json(
+        { error: error.message, hasExistingBlueprint: Boolean(existingBlueprint) },
+        { status: 403 },
+      );
     }
     captureError("blueprint.generate", error, { organizationId: organization.id });
     return NextResponse.json({ error: GENERIC_ERROR }, { status: 502 });

@@ -53,7 +53,18 @@ export default function GeneratingBlueprintPage() {
       try {
         const res = await fetch("/api/blueprint/generate", { method: "POST" });
         const body = await res.json();
-        if (!res.ok) throw new Error(body.error ?? "Something went wrong.");
+        if (!res.ok) {
+          // Free plans get exactly one Blueprint, ever — reaching this page
+          // again (onboarding sends every re-submission here to refresh it)
+          // means this org already has one. Take the user back to it and
+          // into the rest of the app instead of dead-ending on an upgrade
+          // wall with no way forward.
+          if (body.hasExistingBlueprint) {
+            router.replace("/blueprint?blueprintLimitReached=1");
+            return;
+          }
+          throw new Error(body.error ?? "Something went wrong.");
+        }
 
         const job = await pollJob(body.jobId, { timeoutMs: 280_000 });
         if (cancelled) return;
