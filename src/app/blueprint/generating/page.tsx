@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { FormError } from "@/components/ui/form-error";
@@ -28,6 +28,13 @@ export default function GeneratingBlueprintPage() {
   const router = useRouter();
   const [messageIndex, setMessageIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  // Guards against React's dev-mode double-invocation of this effect
+  // (mount → cleanup → mount), which would otherwise fire two concurrent
+  // POSTs to /api/blueprint/generate on a single page load. The route
+  // itself is idempotent now (see src/app/api/blueprint/generate/route.ts),
+  // but skipping the duplicate call here avoids two request/poll cycles
+  // for one page load regardless.
+  const hasStartedRef = useRef(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -37,6 +44,9 @@ export default function GeneratingBlueprintPage() {
   }, []);
 
   useEffect(() => {
+    if (hasStartedRef.current) return;
+    hasStartedRef.current = true;
+
     let cancelled = false;
 
     (async () => {

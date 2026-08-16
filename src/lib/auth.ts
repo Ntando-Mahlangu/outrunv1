@@ -2,7 +2,7 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { magicLink } from "better-auth/plugins/magic-link";
 import { genericOAuth, microsoftEntraId } from "better-auth/plugins/generic-oauth";
-import { twoFactor } from "better-auth/plugins";
+import { twoFactor, emailOTP } from "better-auth/plugins";
 import { createAuthMiddleware, isAPIError } from "better-auth/api";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
@@ -53,17 +53,17 @@ export const auth = betterAuth({
 
   emailVerification: {
     sendOnSignUp: true,
-    // Clicking the verification link signs the user straight in rather
-    // than dropping them back at /sign-in a second time — sign-up's own
+    // Entering the correct code signs the user straight in rather than
+    // dropping them back at /sign-in a second time — sign-up's own
     // callbackURL (see the sign-up page) carries them on to /welcome.
+    // sendVerificationEmail is intentionally left unset here: the
+    // emailOTP plugin below (overrideDefaultEmailVerification) supplies
+    // it, and an options.emailVerification.sendVerificationEmail defined
+    // on this object would take precedence over the plugin's and silently
+    // put the old link back (Better Auth merges plugin-init overrides
+    // with defu(options, pluginOptions), so the user's own value always
+    // wins over a plugin's when both are set).
     autoSignInAfterVerification: true,
-    sendVerificationEmail: async ({ user, url }) => {
-      await sendEmail({
-        to: user.email,
-        subject: "Verify your Outrun account",
-        text: `Confirm your email to finish setting up Outrun: ${url}`,
-      });
-    },
   },
 
   socialProviders: googleConfigured
@@ -85,6 +85,32 @@ export const auth = betterAuth({
   },
 
   plugins: [
+    // Email verification via a 6-digit code instead of a click-through
+    // link. overrideDefaultEmailVerification reroutes the existing
+    // requireEmailVerification/sendOnSignUp/autoSignInAfterVerification
+    // flow above through this plugin's own send+check endpoints rather
+    // than replacing it outright, so /verify-email's existing gating
+    // keeps working unchanged. storeOTP "hashed" avoids sitting a valid
+    // code in Postgres in plain text for its 5-minute lifetime.
+    emailOTP({
+      storeOTP: "hashed",
+      overrideDefaultEmailVerification: true,
+      sendVerificationOTP: async ({ email, otp, type }) => {
+        const subject =
+          type === "sign-in"
+            ? "Your Outrun sign-in code"
+            : type === "forget-password"
+              ? "Your Outrun password reset code"
+              : type === "change-email"
+                ? "Confirm your new Outrun email"
+                : "Verify your Outrun account";
+        await sendEmail({
+          to: email,
+          subject,
+          text: `Your verification code is ${otp}\n\nIt expires in 5 minutes. If you didn't request this, you can ignore this email.`,
+        });
+      },
+    }),
     // docs/outrun/03 "AUTHENTICATION — Magic Link". Reuses the same
     // sendEmail() seam as password reset/verification; a fresh account
     // is created automatically for an email that doesn't exist yet
