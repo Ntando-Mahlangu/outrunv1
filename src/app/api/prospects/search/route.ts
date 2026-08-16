@@ -55,7 +55,11 @@ export async function POST(request: NextRequest) {
     const parsedQuery = await parseSearchQuery(query);
 
     const provider = getCompanyDataProvider();
-    const rawResults = await provider.search(parsedQuery.placesQuery);
+    const rawResults = await provider.search({
+      placesQuery: parsedQuery.placesQuery,
+      location: parsedQuery.location,
+      osmTags: parsedQuery.osmTags,
+    });
     const results = applyPostFilters(rawResults, parsedQuery.postFilters);
 
     const latestBlueprint = await growthBlueprintRepository.findLatestIcpForOrg(organization.id);
