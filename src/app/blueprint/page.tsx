@@ -33,7 +33,11 @@ export default async function BlueprintPage({
     prisma.growthBlueprint.count({ where: { organizationId: organization.id } }),
   ]);
 
-  if (!blueprint) redirect("/blueprint/generating");
+  // Dashboard's own empty state (src/app/(app)/dashboard/page.tsx) handles
+  // "no Blueprint yet" gracefully — kicking off generation or showing
+  // progress — without ever dead-ending the user, so it's the fallback
+  // here too rather than a dedicated generating page.
+  if (!blueprint) redirect("/dashboard");
 
   // docs/outrun/03 "SECOND WOW MOMENT" — only ever shown next to the very
   // first Blueprint (src/lib/jobs/queue.ts only chains

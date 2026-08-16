@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getCurrentSession } from "@/lib/session";
 import { getCurrentOrganization } from "@/lib/org";
 import { findLatestForOrg } from "@/lib/repositories/growth-blueprint-repository";
+import { BlueprintPending } from "@/components/dashboard/blueprint-pending";
 import { getTodaysMission, getMissionActionHref } from "@/lib/dashboard/mission";
 import { getBusinessHealth, type HealthCategory } from "@/lib/growth-partner/health";
 import { getBiggestWinThisWeek } from "@/lib/growth-partner/weekly-win";
@@ -58,7 +59,22 @@ export default async function DashboardPage() {
   if (!organization.businessProfile) redirect("/onboarding");
 
   const blueprint = await findLatestForOrg(organization.id);
-  if (!blueprint) redirect("/blueprint/generating");
+  if (!blueprint) {
+    const inFlightJob = await prisma.job.findFirst({
+      where: {
+        organizationId: organization.id,
+        type: "BLUEPRINT_GENERATION",
+        status: { in: ["PENDING", "RUNNING"] },
+      },
+    });
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="w-full max-w-md">
+          <BlueprintPending hasInFlightJob={Boolean(inFlightJob)} />
+        </div>
+      </div>
+    );
+  }
 
   const mission = getTodaysMission(blueprint);
   const allOpportunities = blueprint.opportunities as GrowthBlueprintData["opportunities"];

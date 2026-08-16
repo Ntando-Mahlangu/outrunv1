@@ -40,14 +40,15 @@ export async function POST() {
   try {
     await checkRateLimit(`ai:${organization.id}`, RATE_LIMITS.AI.limit, RATE_LIMITS.AI.windowSeconds);
 
-    // Idempotency: /blueprint/generating fires this on mount, and React's
-    // dev-mode double-effect (or a duplicate tab, or a retried request) can
-    // send two POSTs within milliseconds of each other. Without this check,
-    // both pass assertUsageAvailable before either has recorded usage,
-    // enqueue two jobs, and a Free-tier org — which only gets one Blueprint,
-    // ever — has its lifetime allotment burned by a single click before the
-    // first generation even finishes. Returning the in-flight job instead
-    // makes a duplicate call a no-op rather than a second billable attempt.
+    // Idempotency: onboarding fires this once per submission, dashboard's
+    // BlueprintPending offers its own manual retry, and BlueprintActions
+    // has its own "Regenerate" button — any of those firing twice in close
+    // succession (a duplicate tab, a retried request) would otherwise both
+    // pass assertUsageAvailable before either has recorded usage, enqueue
+    // two jobs, and burn a Free-tier org's one-lifetime allotment on a
+    // single click before the first generation even finishes. Returning
+    // the in-flight job instead makes a duplicate call a no-op rather than
+    // a second billable attempt.
     const inFlight = await prisma.job.findFirst({
       where: {
         organizationId: organization.id,
@@ -77,10 +78,9 @@ export async function POST() {
       return NextResponse.json({ error: error.message }, { status: 429 });
     }
     if (error instanceof UserFacingError) {
-      // Onboarding sends every re-submission here to refresh the Blueprint
-      // (see src/app/onboarding/page.tsx), but Free only ever grants one —
-      // when an org has already used it, this is never the org's first
-      // Blueprint, so the caller (src/app/blueprint/generating/page.tsx)
+      // Onboarding fires this once per submission, but Free only ever
+      // grants one Blueprint — when an org has already used it, this is
+      // never the org's first, so the caller (src/app/onboarding/page.tsx)
       // uses this to send the user back to the one they already have
       // instead of dead-ending on an upgrade wall with no way into the
       // rest of the app.
