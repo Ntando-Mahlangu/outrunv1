@@ -67,6 +67,7 @@ export default function OnboardingPage() {
   const [answers, setAnswers] = useState(INITIAL_ANSWERS);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [noWebsite, setNoWebsite] = useState(false);
 
   const steps = [
     {
@@ -243,14 +244,29 @@ export default function OnboardingPage() {
       subtitle: "Optional, but strongly encouraged — we'll factor it into your analysis.",
       canContinue: true,
       render: () => (
-        <Input
-          autoFocus
-          aria-labelledby="onboarding-question"
-          type="url"
-          placeholder="https://yourbusiness.com"
-          value={answers.website}
-          onChange={(e) => setAnswers({ ...answers, website: e.target.value })}
-        />
+        <div className="space-y-4">
+          <Input
+            autoFocus
+            aria-labelledby="onboarding-question"
+            type="url"
+            placeholder="https://yourbusiness.com"
+            disabled={noWebsite}
+            value={answers.website}
+            onChange={(e) => setAnswers({ ...answers, website: e.target.value })}
+          />
+          <label className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
+            <input
+              type="checkbox"
+              checked={noWebsite}
+              onChange={(e) => {
+                setNoWebsite(e.target.checked);
+                if (e.target.checked) setAnswers({ ...answers, website: "" });
+              }}
+              className="size-4 rounded border-[var(--color-border)] bg-[var(--color-bg-secondary)]"
+            />
+            I don&apos;t have a website
+          </label>
+        </div>
       ),
     },
     {
