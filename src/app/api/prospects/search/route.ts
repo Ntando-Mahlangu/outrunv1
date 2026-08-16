@@ -3,7 +3,7 @@ import { z } from "zod";
 import { UsageEventType } from "@prisma/client";
 import { getCurrentSession } from "@/lib/session";
 import { getCurrentOrganization } from "@/lib/org";
-import { getCompanyDataProvider } from "@/lib/leads";
+import { getCompanyDataProvider, getActiveCompanyDataProviderName } from "@/lib/leads";
 import { scoreCompany } from "@/lib/leads/scoring";
 import { parseSearchQuery, applyPostFilters } from "@/lib/leads/query-parser";
 import * as companyRepository from "@/lib/repositories/company-repository";
@@ -82,6 +82,7 @@ export async function POST(request: NextRequest) {
       interpretation: {
         searchedFor: parsedQuery.placesQuery,
         unsupportedIntents: parsedQuery.unsupportedIntents,
+        provider: getActiveCompanyDataProviderName(),
       },
     });
   } catch (error) {

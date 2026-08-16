@@ -17,7 +17,11 @@ import { BulkActionsBar } from "@/components/prospects/bulk-actions-bar";
 import { SplitHeading } from "@/components/motion/split-heading";
 import { Magnetic } from "@/components/motion/magnetic";
 
-type Interpretation = { searchedFor: string; unsupportedIntents: string[] };
+type Interpretation = {
+  searchedFor: string;
+  unsupportedIntents: string[];
+  provider: "google_places" | "openstreetmap";
+};
 
 export default function ProspectsPage() {
   const [query, setQuery] = useState("");
@@ -133,10 +137,21 @@ export default function ProspectsPage() {
       )}
 
       {companies !== null && companies.length === 0 && !error && (
-        <p className="text-sm text-[var(--color-text-muted)]">
-          No matching businesses found. Try a broader description or a different
-          location.
-        </p>
+        <div className="space-y-2 text-sm text-[var(--color-text-muted)]">
+          <p>No matching businesses found. Try a broader description or a different location.</p>
+          {interpretation?.provider === "openstreetmap" && (
+            <p>
+              You&apos;re on the free OpenStreetMap data source, which is built for looking up
+              addresses and named places rather than searching by business category — it often
+              can&apos;t answer &quot;{interpretation.searchedFor}&quot;-style queries even when
+              matching businesses exist. A precise, correctly-spelled place name (e.g. a
+              neighborhood or landmark) sometimes helps, but adding a Google Places API key to
+              your Outrun deployment is the reliable fix for category searches like this — ask
+              whoever manages your Outrun hosting to set{" "}
+              <code className="text-[var(--color-text-secondary)]">GOOGLE_PLACES_API_KEY</code>.
+            </p>
+          )}
+        </div>
       )}
 
       {companies && companies.length > 0 && (
