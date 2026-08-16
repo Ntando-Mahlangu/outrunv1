@@ -14,6 +14,8 @@ import {
   type ProspectFilters,
 } from "@/components/prospects/filter-bar";
 import { BulkActionsBar } from "@/components/prospects/bulk-actions-bar";
+import { SplitHeading } from "@/components/motion/split-heading";
+import { Magnetic } from "@/components/motion/magnetic";
 
 type Interpretation = { searchedFor: string; unsupportedIntents: string[] };
 
@@ -74,9 +76,11 @@ export default function ProspectsPage() {
     <div className="animate-fade-in space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-light tracking-tight text-[var(--color-text-primary)]">
-            Find Prospects
-          </h1>
+          <SplitHeading
+            as="h1"
+            text="Find Prospects"
+            className="text-2xl font-light tracking-tight text-[var(--color-text-primary)]"
+          />
           <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
             Describe who you&apos;re looking for in plain English.
           </p>
@@ -96,9 +100,11 @@ export default function ProspectsPage() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <Button type="submit" disabled={isSearching}>
-          {isSearching ? "Searching…" : "Search"}
-        </Button>
+        <Magnetic strength={0.15} className="inline-block">
+          <Button type="submit" disabled={isSearching}>
+            {isSearching ? "Searching…" : "Search"}
+          </Button>
+        </Magnetic>
       </form>
 
       <FormError message={error} />

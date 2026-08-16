@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/lib/session";
 import { MarketingNav } from "@/components/marketing/nav";
 import { Hero } from "@/components/marketing/hero";
-import { TrustBar } from "@/components/marketing/trust-bar";
 import { PainSection } from "@/components/marketing/pain-section";
 import { SolutionSection } from "@/components/marketing/solution-section";
 import { HowItWorks } from "@/components/marketing/how-it-works";
@@ -23,7 +22,6 @@ export default async function RootPage() {
     <main className="bg-[var(--color-bg-primary)]">
       <MarketingNav />
       <Hero />
-      <TrustBar />
       <PainSection />
       <SolutionSection />
       <HowItWorks />

@@ -9,6 +9,13 @@ const BASE_BACKOFF_MINUTES = 2;
 const DELIVERY_TIMEOUT_MS = 10_000;
 const PAYLOAD_VERSION = 1;
 const SWEEP_BATCH_SIZE = 100;
+// Processed in chunks of this size rather than one at a time — sequential
+// processing meant a batch where most deliveries were timing out (each
+// eating the full DELIVERY_TIMEOUT_MS) could take SWEEP_BATCH_SIZE *
+// DELIVERY_TIMEOUT_MS to finish (worst case ~16 minutes), which is what
+// caused the cron to run long enough to get cancelled outright. Endpoints
+// are independent HTTP destinations, so nothing here relies on ordering.
+const SWEEP_CONCURRENCY = 10;
 
 function nextAttemptDelay(attempts: number): Date {
   const minutes = BASE_BACKOFF_MINUTES * 2 ** (attempts - 1);
@@ -149,8 +156,9 @@ export async function sweepPendingDeliveries() {
     take: SWEEP_BATCH_SIZE,
   });
 
-  for (const delivery of due) {
-    await attemptDelivery(delivery.id);
+  for (let i = 0; i < due.length; i += SWEEP_CONCURRENCY) {
+    const chunk = due.slice(i, i + SWEEP_CONCURRENCY);
+    await Promise.all(chunk.map((delivery) => attemptDelivery(delivery.id)));
   }
 
   return { attempted: due.length };

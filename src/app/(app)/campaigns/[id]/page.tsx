@@ -13,6 +13,7 @@ import { CampaignExportPanel } from "@/components/campaigns/campaign-export-pane
 import { SaveAsTemplateButton } from "@/components/campaigns/save-as-template-button";
 import { CampaignWarningsPanel } from "@/components/campaigns/campaign-warnings-panel";
 import { CampaignActions } from "@/components/campaigns/campaign-actions";
+import { SplitHeading } from "@/components/motion/split-heading";
 
 const STATUS_TONE = {
   DRAFT: "low",
@@ -55,9 +56,11 @@ export default async function CampaignDetailPage({
 
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-light tracking-tight text-[var(--color-text-primary)]">
-            {campaign.name}
-          </h1>
+          <SplitHeading
+            as="h1"
+            text={campaign.name}
+            className="text-2xl font-light tracking-tight text-[var(--color-text-primary)]"
+          />
           <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{campaign.objective}</p>
         </div>
         <div className="flex items-center gap-3">

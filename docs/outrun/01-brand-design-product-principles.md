@@ -125,16 +125,36 @@ Premium.
 No heavy shadows.
 ________________________________________
 ANIMATIONS
-Every animation should have a purpose.
+Every animation should have a purpose — purposeful and cinematic, not
+gimmicky. Think Resend's landing page: deliberate, smooth, confident
+motion, never particle effects or novelty for its own sake.
 Page transitions
 250ms
 Card hover
-150ms
+150ms — plus a slower (300ms) lift + accent-glow border on
+interactive/clickable cards specifically (marketing feature grids,
+pricing tiers), via the Card component's `interactive` prop.
 Buttons
 100ms
+Scroll reveals
+Sections and cards fade + rise into view on scroll (600ms,
+custom ease, once per page load) — the shared Reveal/RevealGroup/
+RevealItem components in src/components/motion. Stagger sibling
+items rather than animating them in unison.
+Signature background
+Two large, very slow-drifting blurred gradient blobs (20-30s loops)
+behind hero-style sections — the AuroraBackground component. Subtle,
+never distracting from the content in front of it.
+Gradient text
+The .text-gradient-signature utility (violet → cyan, slow shimmer) —
+reserve for a single emphasized word per headline, not whole
+sentences.
 Loading
 Elegant skeleton loaders.
-Avoid flashy animations.
+Reduced motion
+Every animation must degrade gracefully under prefers-reduced-motion
+(fade only, no transforms/drift) — see the reduceMotion checks in
+src/components/motion and the global CSS override in globals.css.
 ________________________________________
 LOADING EXPERIENCE
 Never show empty screens.

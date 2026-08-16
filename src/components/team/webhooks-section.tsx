@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FormError } from "@/components/ui/form-error";
 import { formatDate } from "@/lib/i18n/format";
+import { readJsonSafely } from "@/lib/fetch-json";
 
 type WebhookEndpointRow = {
   id: string;
@@ -41,49 +42,67 @@ export function WebhooksSection({
     setError(null);
     setIsCreating(true);
 
-    const res = await fetch("/api/team/webhooks", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url }),
-    });
-    const body = await res.json();
-    setIsCreating(false);
+    try {
+      const res = await fetch("/api/team/webhooks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      const body = await readJsonSafely(res);
+      if (!res.ok) throw new Error((body?.error as string) ?? "We couldn't add that webhook.");
 
-    if (!res.ok) {
-      setError(body.error ?? "We couldn't add that webhook.");
-      return;
+      const endpoint = (body as { endpoint: WebhookEndpointRow & { rawSecret: string } }).endpoint;
+      setRevealedSecret(endpoint.rawSecret);
+      setEndpoints((prev) => [
+        { id: endpoint.id, url: endpoint.url, enabled: true, createdAt: endpoint.createdAt },
+        ...prev,
+      ]);
+      setUrl("");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "We couldn't add that webhook.");
+    } finally {
+      setIsCreating(false);
     }
-
-    setRevealedSecret(body.endpoint.rawSecret);
-    setEndpoints((prev) => [
-      { id: body.endpoint.id, url: body.endpoint.url, enabled: true, createdAt: body.endpoint.createdAt },
-      ...prev,
-    ]);
-    setUrl("");
-    router.refresh();
   }
 
   async function handleRemove(id: string) {
+    setError(null);
     setRemovingId(id);
-    const res = await fetch(`/api/team/webhooks/${id}`, { method: "DELETE" });
-    setRemovingId(null);
-    if (res.ok) {
+    try {
+      const res = await fetch(`/api/team/webhooks/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const body = await readJsonSafely(res);
+        throw new Error((body?.error as string) ?? "We couldn't remove that endpoint.");
+      }
       setEndpoints((prev) => prev.filter((e) => e.id !== id));
       router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "We couldn't remove that endpoint.");
+    } finally {
+      setRemovingId(null);
     }
   }
 
   async function handleToggle(id: string, nextEnabled: boolean) {
+    setError(null);
     setTogglingId(id);
-    const res = await fetch(`/api/team/webhooks/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ enabled: nextEnabled }),
-    });
-    setTogglingId(null);
-    if (res.ok) {
+    try {
+      const res = await fetch(`/api/team/webhooks/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: nextEnabled }),
+      });
+      if (!res.ok) {
+        const body = await readJsonSafely(res);
+        throw new Error((body?.error as string) ?? "We couldn't update that endpoint.");
+      }
       setEndpoints((prev) => prev.map((e) => (e.id === id ? { ...e, enabled: nextEnabled } : e)));
       router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "We couldn't update that endpoint.");
+    } finally {
+      setTogglingId(null);
     }
   }
 
@@ -134,7 +153,11 @@ export function WebhooksSection({
       <FormError message={error} />
 
       {endpoints.length === 0 ? (
-        <p className="text-sm text-[var(--color-text-muted)]">No webhook endpoints yet.</p>
+        <p className="text-sm text-[var(--color-text-muted)]">
+          {canManage
+            ? "No webhook endpoints yet — add one above to have your own tools react to what happens in Outrun."
+            : "No webhook endpoints yet. Ask a workspace admin to add one."}
+        </p>
       ) : (
         <ul className="space-y-3">
           {endpoints.map((endpoint) => (

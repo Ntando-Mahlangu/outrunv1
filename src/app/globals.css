@@ -6,6 +6,14 @@
  * is derived from the logo.
  */
 @theme {
+  /* Signature gradient pair (docs/outrun/01 "a more futuristic, luxury
+     feel") — violet through cyan, used for gradient text, glows, and the
+     aurora background. --color-accent stays the solid fill for buttons/
+     pills/focus rings; this pair is specifically for gradient treatments. */
+  --color-accent-2: #22d3ee;
+  --shadow-glow: 0 0 60px -12px color-mix(in srgb, var(--color-accent) 60%, transparent);
+  --shadow-glow-lg: 0 0 120px -20px color-mix(in srgb, var(--color-accent) 55%, transparent);
+
   --color-bg-primary: #181818;
   --color-bg-secondary: #222222;
   --color-card: #2b2b2b;
@@ -39,6 +47,8 @@
   --radius-lg: 0.875rem;
 
   --animate-fade-in: fade-in 250ms ease-out;
+  --animate-shimmer: shimmer 6s linear infinite;
+  --animate-glow-pulse: glow-pulse 4s ease-in-out infinite;
 
   @keyframes fade-in {
     from {
@@ -49,6 +59,39 @@
       opacity: 1;
       transform: translateY(0);
     }
+  }
+
+  @keyframes shimmer {
+    to {
+      background-position: 200% center;
+    }
+  }
+
+  @keyframes glow-pulse {
+    0%,
+    100% {
+      opacity: 0.5;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+}
+
+@layer utilities {
+  /* Signature gradient text — headline emphasis words (docs/outrun/01). */
+  .text-gradient-signature {
+    background-image: linear-gradient(
+      100deg,
+      var(--color-accent-text) 0%,
+      var(--color-accent-2) 50%,
+      var(--color-accent-text) 100%
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: var(--animate-shimmer);
   }
 }
 

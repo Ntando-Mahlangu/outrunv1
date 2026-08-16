@@ -1,6 +1,8 @@
-import type { Job, JobType } from "@prisma/client";
+import { UsageEventType, type Job, type JobType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { captureError } from "@/lib/observability";
+import { UserFacingError } from "@/lib/errors";
+import { recordUsage } from "@/lib/billing/usage";
 import { generateGrowthBlueprint } from "@/lib/growth-blueprint/generate";
 import { analyzeSEO } from "@/lib/seo/analyze";
 import { createCampaign } from "@/lib/campaigns/create";
@@ -47,6 +49,12 @@ async function runHandler(job: Job): Promise<string | null> {
   switch (job.type) {
     case "BLUEPRINT_GENERATION": {
       const blueprint = await generateGrowthBlueprint(job.organizationId);
+      // Only charged against the org's plan allotment once generation has
+      // actually produced a Blueprint (see assertUsageAvailable() in
+      // src/app/api/blueprint/generate/route.ts, which only checked the
+      // limit before this ran) — a failed attempt no longer costs a
+      // Free-tier user their one lifetime credit.
+      await recordUsage(job.organizationId, UsageEventType.BLUEPRINT_GENERATION);
       await createTasksFromBlueprint(blueprint);
       await createNotification(
         job.organizationId,
@@ -138,7 +146,15 @@ export async function runJob(jobId: string): Promise<void> {
       data: {
         status: "FAILED",
         completedAt: new Date(),
-        errorMessage: error instanceof Error ? error.message : "Something went wrong.",
+        // Only a UserFacingError's message is safe to show verbatim
+        // (src/lib/errors.ts) — anything else (config issues, provider
+        // outages, unexpected exceptions) must never reach the client,
+        // since job.errorMessage is returned as-is by /api/jobs/[id] and
+        // rendered directly (e.g. src/app/blueprint/generating/page.tsx).
+        errorMessage:
+          error instanceof UserFacingError
+            ? error.message
+            : "Something went wrong on our end. Please try again in a moment.",
       },
     });
   }

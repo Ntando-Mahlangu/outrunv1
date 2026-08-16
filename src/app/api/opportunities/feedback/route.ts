@@ -3,7 +3,7 @@ import { z } from "zod";
 import { RecommendationRating } from "@prisma/client";
 import { getCurrentSession } from "@/lib/session";
 import { getCurrentOrganization } from "@/lib/org";
-import { rateRecommendation } from "@/lib/ceo-agent/recommendation-feedback";
+import { rateRecommendation } from "@/lib/growth-partner/recommendation-feedback";
 import { UserFacingError } from "@/lib/errors";
 import { captureError } from "@/lib/observability";
 import { parseJsonBody } from "@/lib/validate-request";

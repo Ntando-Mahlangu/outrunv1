@@ -1,3 +1,7 @@
+import { RevealGroup, RevealItem } from "@/components/motion/reveal";
+import { GenerativeLattice } from "@/components/motion/backgrounds";
+import { SplitHeading } from "@/components/motion/split-heading";
+
 const FAQS = [
   {
     q: "What makes Outrun different?",
@@ -23,17 +27,21 @@ const FAQS = [
 
 export function FaqSection() {
   return (
-    <section id="faq" className="mx-auto max-w-3xl px-6 py-20">
-      <h2 className="text-center text-3xl font-light tracking-tight text-[var(--color-text-primary)]">
-        Questions
-      </h2>
-      <div className="mt-10 space-y-8">
-        {FAQS.map((faq) => (
-          <div key={faq.q}>
-            <h3 className="text-base font-medium text-[var(--color-text-primary)]">{faq.q}</h3>
-            <p className="mt-1.5 text-sm text-[var(--color-text-secondary)]">{faq.a}</p>
-          </div>
-        ))}
+    <section id="faq" className="relative overflow-hidden py-20">
+      <GenerativeLattice />
+      <div className="relative z-10 mx-auto max-w-3xl px-6">
+        <SplitHeading
+          text="Questions"
+          className="text-center text-3xl font-light tracking-tight text-[var(--color-text-primary)]"
+        />
+        <RevealGroup className="mt-10 space-y-8" stagger={0.08}>
+          {FAQS.map((faq) => (
+            <RevealItem key={faq.q}>
+              <h3 className="text-base font-medium text-[var(--color-text-primary)]">{faq.q}</h3>
+              <p className="mt-1.5 text-sm text-[var(--color-text-secondary)]">{faq.a}</p>
+            </RevealItem>
+          ))}
+        </RevealGroup>
       </div>
     </section>
   );

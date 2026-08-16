@@ -16,6 +16,7 @@ import {
   type ProspectFilters,
 } from "@/components/prospects/filter-bar";
 import { BulkActionsBar } from "@/components/prospects/bulk-actions-bar";
+import { CountUp } from "@/components/motion/count-up";
 
 export function LeadListDetailClient({
   listId,
@@ -156,7 +157,7 @@ export function LeadListDetailClient({
 
       <div>
         <h2 className="text-lg font-medium text-[var(--color-text-primary)]">
-          {companies.length} prospect{companies.length === 1 ? "" : "s"}
+          <CountUp value={companies.length} suffix={companies.length === 1 ? " prospect" : " prospects"} />
         </h2>
       </div>
 

@@ -10,6 +10,8 @@ import { FormError } from "@/components/ui/form-error";
 import { ImpactBadge, Badge } from "@/components/ui/badge";
 import { ScoreGauge } from "@/components/growth-blueprint/score-gauge";
 import { pollJob } from "@/lib/jobs/poll-job";
+import { SplitHeading } from "@/components/motion/split-heading";
+import { Magnetic } from "@/components/motion/magnetic";
 import type { SEOAnalysisData, LocalSeoPersisted } from "@/lib/seo/schema";
 
 type Analysis = {
@@ -109,9 +111,11 @@ export function SeoPageClient({
   return (
     <div className="animate-fade-in space-y-6">
       <div>
-        <h1 className="text-2xl font-light tracking-tight text-[var(--color-text-primary)]">
-          SEO
-        </h1>
+        <SplitHeading
+          as="h1"
+          text="SEO"
+          className="text-2xl font-light tracking-tight text-[var(--color-text-primary)]"
+        />
         <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
           Understand your website&apos;s search visibility and generate content
           to improve it.
@@ -144,9 +148,11 @@ export function SeoPageClient({
           <p className="text-sm text-[var(--color-text-secondary)]">
             Outrun will crawl {website} and generate a full SEO health report.
           </p>
-          <Button className="mt-4" onClick={handleAnalyze} disabled={isAnalyzing}>
-            {isAnalyzing ? "Analysing your website…" : "Analyse My Website"}
-          </Button>
+          <Magnetic strength={0.15} className="mt-4 inline-block">
+            <Button onClick={handleAnalyze} disabled={isAnalyzing}>
+              {isAnalyzing ? "Analysing your website…" : "Analyse My Website"}
+            </Button>
+          </Magnetic>
         </Card>
       )}
 

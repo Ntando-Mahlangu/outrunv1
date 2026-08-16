@@ -7,10 +7,12 @@ import type { CallScriptData } from "@/lib/prospects/call-script-schema";
 
 export function CallScriptPanel({
   companyId,
+  companyPhone,
   hasResearch,
   initialCallScript,
 }: {
   companyId: string;
+  companyPhone: string | null;
   hasResearch: boolean;
   initialCallScript: CallScriptData | null;
 }) {
@@ -33,17 +35,34 @@ export function CallScriptPanel({
     }
   }
 
+  const phoneNote = companyPhone ? (
+    <p className="text-sm text-[var(--color-text-secondary)]">
+      Number to dial:{" "}
+      <a href={`tel:${companyPhone}`} className="text-[var(--color-accent-text)] hover:underline">
+        {companyPhone}
+      </a>
+    </p>
+  ) : (
+    <p className="text-sm text-[var(--color-text-muted)]">
+      No phone number on file for this company — add one in Contacts above if you have it.
+    </p>
+  );
+
   if (!hasResearch) {
     return (
-      <p className="text-sm text-[var(--color-text-muted)]">
-        Research this prospect first — the call script is written from the research
-        profile so it stays specific to them.
-      </p>
+      <div className="space-y-3">
+        {phoneNote}
+        <p className="text-sm text-[var(--color-text-muted)]">
+          Research this prospect first — the call script is written from the research
+          profile so it stays specific to them.
+        </p>
+      </div>
     );
   }
 
   return (
     <div className="space-y-4">
+      {phoneNote}
       <FormError message={error} />
 
       <Button onClick={generate} disabled={isGenerating}>

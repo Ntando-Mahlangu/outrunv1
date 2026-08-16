@@ -3,6 +3,7 @@ import { getCurrentSession } from "@/lib/session";
 import { Card } from "@/components/ui/card";
 import { SessionsPanel } from "@/components/settings/sessions-panel";
 import { MfaPanel } from "@/components/settings/mfa-panel";
+import { SplitHeading } from "@/components/motion/split-heading";
 
 export default async function SecuritySettingsPage() {
   const session = await getCurrentSession();
@@ -11,9 +12,11 @@ export default async function SecuritySettingsPage() {
   return (
     <div className="animate-fade-in space-y-8">
       <div>
-        <h1 className="text-2xl font-light tracking-tight text-[var(--color-text-primary)]">
-          Security
-        </h1>
+        <SplitHeading
+          as="h1"
+          text="Security"
+          className="text-2xl font-light tracking-tight text-[var(--color-text-primary)]"
+        />
         <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
           Manage how you sign in and where you&apos;re signed in.
         </p>

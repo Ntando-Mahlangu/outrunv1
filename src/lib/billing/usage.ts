@@ -66,12 +66,15 @@ const UPGRADE_MESSAGE: Record<UsageEventType, string> = {
 };
 
 /**
- * Call before performing a billable action. Throws a friendly
- * UserFacingError once the org's plan allotment is exhausted; otherwise
- * records the event and lets the caller proceed. This is the single
- * enforcement point — nothing about plan limits lives in the UI layer.
+ * Throws a friendly UserFacingError once the org's plan allotment for
+ * this usage type is exhausted; otherwise resolves and lets the caller
+ * proceed. Read-only — does not record anything itself. Split out from
+ * recordUsage() below so an action whose real work happens later,
+ * asynchronously (e.g. Blueprint generation — see src/lib/jobs/queue.ts)
+ * can check the limit up front without charging the org's allotment for
+ * an attempt that hasn't actually succeeded yet.
  */
-export async function checkAndRecordUsage(organizationId: string, type: UsageEventType) {
+export async function assertUsageAvailable(organizationId: string, type: UsageEventType) {
   const organization = await prisma.organization.findUniqueOrThrow({
     where: { id: organizationId },
     select: { planTier: true, currentPeriodStart: true, createdAt: true },
@@ -87,8 +90,26 @@ export async function checkAndRecordUsage(organizationId: string, type: UsageEve
       throw new UserFacingError(UPGRADE_MESSAGE[type]);
     }
   }
+}
 
+/** Records one unit of usage against the org's allotment. Call only once the billable action has actually succeeded. */
+export async function recordUsage(organizationId: string, type: UsageEventType) {
   await prisma.usageEvent.create({ data: { organizationId, type } });
+}
+
+/**
+ * Call before performing a billable action whose success/failure is known
+ * synchronously, in the same request (e.g. a single AI call). Throws a
+ * friendly UserFacingError once the org's plan allotment is exhausted;
+ * otherwise records the event and lets the caller proceed. This is the
+ * enforcement point for that case — nothing about plan limits lives in
+ * the UI layer. For an action whose real work happens later,
+ * asynchronously, use assertUsageAvailable() before starting it and
+ * recordUsage() once it actually succeeds, instead of this combined helper.
+ */
+export async function checkAndRecordUsage(organizationId: string, type: UsageEventType) {
+  await assertUsageAvailable(organizationId, type);
+  await recordUsage(organizationId, type);
 }
 
 export async function getUsageSummary(organizationId: string, planTier: PlanTier) {

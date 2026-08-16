@@ -9,6 +9,8 @@ import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
 import { Badge } from "@/components/ui/badge";
+import { SplitHeading } from "@/components/motion/split-heading";
+import { Magnetic } from "@/components/motion/magnetic";
 
 const INVITABLE_ROLES: MembershipRole[] = ["ADMIN", "MANAGER", "MEMBER", "VIEWER"];
 
@@ -125,7 +127,11 @@ export function TeamPageClient({
   return (
     <div className="animate-fade-in space-y-6">
       <div>
-        <h1 className="text-2xl font-light tracking-tight text-[var(--color-text-primary)]">Team</h1>
+        <SplitHeading
+          as="h1"
+          text="Team"
+          className="text-2xl font-light tracking-tight text-[var(--color-text-primary)]"
+        />
         <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
           Manage who has access to this workspace.
         </p>
@@ -157,9 +163,11 @@ export function TeamPageClient({
                 </option>
               ))}
             </Select>
-            <Button type="submit" disabled={isInviting}>
-              {isInviting ? "Sending…" : "Send Invite"}
-            </Button>
+            <Magnetic strength={0.15} className="inline-block">
+              <Button type="submit" disabled={isInviting}>
+                {isInviting ? "Sending…" : "Send Invite"}
+              </Button>
+            </Magnetic>
           </form>
         </Card>
       )}

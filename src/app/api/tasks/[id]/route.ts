@@ -5,7 +5,7 @@ import { getCurrentOrganization } from "@/lib/org";
 import { prisma } from "@/lib/prisma";
 import { captureError } from "@/lib/observability";
 import { logEvent, EventType } from "@/lib/memory/log-event";
-import { generateCoachFeedback } from "@/lib/ceo-agent/coach";
+import { generateCoachFeedback } from "@/lib/growth-partner/coach";
 import { parseJsonBody } from "@/lib/validate-request";
 
 const GENERIC_ERROR = "We couldn't update that task right now. Please try again in a moment.";

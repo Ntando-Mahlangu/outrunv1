@@ -6,6 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormError } from "@/components/ui/form-error";
+import { SplitHeading } from "@/components/motion/split-heading";
+import { Magnetic } from "@/components/motion/magnetic";
 
 type LeadListSummary = { id: string; name: string; companyCount: number; createdAt: Date };
 
@@ -56,9 +58,11 @@ export function LeadListsPageClient({ initialLists }: { initialLists: LeadListSu
     <div className="animate-fade-in space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-light tracking-tight text-[var(--color-text-primary)]">
-            Lead Lists
-          </h1>
+          <SplitHeading
+            as="h1"
+            text="Lead Lists"
+            className="text-2xl font-light tracking-tight text-[var(--color-text-primary)]"
+          />
           <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
             Organize saved prospects into lists like &ldquo;Hot Prospects&rdquo; or &ldquo;Q3
             Campaign&rdquo;.
@@ -77,9 +81,11 @@ export function LeadListsPageClient({ initialLists }: { initialLists: LeadListSu
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
-          <Button type="submit" disabled={isCreating || !name.trim()}>
-            {isCreating ? "Creating…" : "Create List"}
-          </Button>
+          <Magnetic strength={0.15} className="inline-block">
+            <Button type="submit" disabled={isCreating || !name.trim()}>
+              {isCreating ? "Creating…" : "Create List"}
+            </Button>
+          </Magnetic>
         </form>
       </Card>
 

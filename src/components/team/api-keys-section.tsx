@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FormError } from "@/components/ui/form-error";
 import { formatDate } from "@/lib/i18n/format";
+import { readJsonSafely } from "@/lib/fetch-json";
 
 type ApiKeyRow = {
   id: string;
@@ -62,44 +63,54 @@ export function ApiKeysSection({
     setError(null);
     setIsCreating(true);
 
-    const res = await fetch("/api/team/api-keys", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
-    });
-    const body = await res.json();
-    setIsCreating(false);
+    try {
+      const res = await fetch("/api/team/api-keys", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      const body = await readJsonSafely(res);
+      if (!res.ok) throw new Error((body?.error as string) ?? "We couldn't create that API key.");
 
-    if (!res.ok) {
-      setError(body.error ?? "We couldn't create that API key.");
-      return;
+      const key = (body as { key: ApiKeyRow & { rawKey: string } }).key;
+      setRevealedKey(key.rawKey);
+      setKeys((prev) => [
+        {
+          id: key.id,
+          name: key.name,
+          keyPrefix: key.keyPrefix,
+          createdAt: key.createdAt,
+          lastUsedAt: null,
+          revokedAt: null,
+        },
+        ...prev,
+      ]);
+      setName("");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "We couldn't create that API key.");
+    } finally {
+      setIsCreating(false);
     }
-
-    setRevealedKey(body.key.rawKey);
-    setKeys((prev) => [
-      {
-        id: body.key.id,
-        name: body.key.name,
-        keyPrefix: body.key.keyPrefix,
-        createdAt: body.key.createdAt,
-        lastUsedAt: null,
-        revokedAt: null,
-      },
-      ...prev,
-    ]);
-    setName("");
-    router.refresh();
   }
 
   async function handleRevoke(id: string) {
+    setError(null);
     setRevokingId(id);
-    const res = await fetch(`/api/team/api-keys/${id}`, { method: "DELETE" });
-    setRevokingId(null);
-    if (res.ok) {
+    try {
+      const res = await fetch(`/api/team/api-keys/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const body = await readJsonSafely(res);
+        throw new Error((body?.error as string) ?? "We couldn't revoke that key.");
+      }
       setKeys((prev) =>
         prev.map((k) => (k.id === id ? { ...k, revokedAt: new Date().toISOString() } : k)),
       );
       router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "We couldn't revoke that key.");
+    } finally {
+      setRevokingId(null);
     }
   }
 
@@ -150,7 +161,11 @@ export function ApiKeysSection({
       <FormError message={error} />
 
       {keys.length === 0 ? (
-        <p className="text-sm text-[var(--color-text-muted)]">No API keys yet.</p>
+        <p className="text-sm text-[var(--color-text-muted)]">
+          {canManage
+            ? "No API keys yet — generate one above to start pulling your prospects data into another tool."
+            : "No API keys yet. Ask a workspace admin to generate one."}
+        </p>
       ) : (
         <ul className="space-y-3">
           {keys.map((key) => (

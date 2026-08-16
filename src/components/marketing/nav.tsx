@@ -5,7 +5,7 @@ import { Logo } from "@/components/brand/logo";
 
 export function MarketingNav() {
   return (
-    <header className="sticky top-0 z-10 border-b border-[var(--color-border)] bg-[var(--color-bg-primary)]/80 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-bg-primary)]/80 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <Logo />
 
@@ -32,7 +32,7 @@ export function MarketingNav() {
             Sign In
           </Link>
           <Link href="/sign-up" className={cn(buttonVariants({ size: "sm" }))}>
-            Start Free
+            Start Now
           </Link>
         </div>
       </div>

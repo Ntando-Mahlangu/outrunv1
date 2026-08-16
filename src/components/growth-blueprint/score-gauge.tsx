@@ -1,3 +1,5 @@
+import { CountUp } from "@/components/motion/count-up";
+
 const SIZE = 176;
 const STROKE = 12;
 const RADIUS = (SIZE - STROKE) / 2;
@@ -39,9 +41,7 @@ export function ScoreGauge({ score, label }: { score: number; label?: string }) 
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-4xl font-light text-[var(--color-text-primary)]">
-            {score}
-          </span>
+          <CountUp value={score} className="text-4xl font-light text-[var(--color-text-primary)]" />
           <span className="text-xs text-[var(--color-text-muted)]">/ 100</span>
         </div>
       </div>

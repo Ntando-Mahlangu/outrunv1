@@ -7,6 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
+import { SplitHeading } from "@/components/motion/split-heading";
+import { Magnetic } from "@/components/motion/magnetic";
+import { readJsonSafely } from "@/lib/fetch-json";
 
 function progressPercent(goal: Goal): number | null {
   if (goal.targetValue == null || goal.currentValue == null || goal.targetValue === 0) return null;
@@ -30,51 +33,59 @@ export function GoalsPageClient({ initialGoals }: { initialGoals: Goal[] }) {
     setError(null);
     setIsAdding(true);
 
-    const res = await fetch("/api/goals", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title,
-        targetMetric: targetMetric || undefined,
-        targetValue: targetValue ? Number(targetValue) : undefined,
-      }),
-    });
-    const body = await res.json();
-    setIsAdding(false);
+    try {
+      const res = await fetch("/api/goals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          targetMetric: targetMetric || undefined,
+          targetValue: targetValue ? Number(targetValue) : undefined,
+        }),
+      });
+      const body = await readJsonSafely(res);
+      if (!res.ok) throw new Error((body?.error as string) ?? "We couldn't add that goal.");
 
-    if (!res.ok) {
-      setError(body.error ?? "We couldn't add that goal.");
-      return;
+      setGoals((prev) => [body!.goal as Goal, ...prev]);
+      setTitle("");
+      setTargetMetric("");
+      setTargetValue("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "We couldn't add that goal.");
+    } finally {
+      setIsAdding(false);
     }
-
-    setGoals((prev) => [body.goal, ...prev]);
-    setTitle("");
-    setTargetMetric("");
-    setTargetValue("");
   }
 
   async function markComplete(id: string) {
+    setError(null);
     setBusyId(id);
-    const res = await fetch(`/api/goals/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "COMPLETED" }),
-    });
-    const body = await res.json();
-    setBusyId(null);
-    if (res.ok) {
-      setGoals((prev) => prev.map((g) => (g.id === id ? body.goal : g)));
+    try {
+      const res = await fetch(`/api/goals/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "COMPLETED" }),
+      });
+      const body = await readJsonSafely(res);
+      if (!res.ok) throw new Error((body?.error as string) ?? "We couldn't update that goal.");
+      setGoals((prev) => prev.map((g) => (g.id === id ? (body!.goal as Goal) : g)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "We couldn't update that goal.");
+    } finally {
+      setBusyId(null);
     }
   }
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-light tracking-tight text-[var(--color-text-primary)]">
-          Goals
-        </h1>
+        <SplitHeading
+          as="h1"
+          text="Goals"
+          className="text-2xl font-light tracking-tight text-[var(--color-text-primary)]"
+        />
         <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-          The CEO Agent and Growth Blueprint read these to keep every recommendation aligned with
+          Your Growth Partner and Growth Blueprint read these to keep every recommendation aligned with
           what you&apos;re actually trying to achieve.
         </p>
       </div>
@@ -113,9 +124,11 @@ export function GoalsPageClient({ initialGoals }: { initialGoals: Goal[] }) {
               />
             </div>
           </div>
-          <Button type="submit" disabled={isAdding}>
-            {isAdding ? "Adding…" : "Add goal"}
-          </Button>
+          <Magnetic strength={0.15} className="inline-block">
+            <Button type="submit" disabled={isAdding}>
+              {isAdding ? "Adding…" : "Add goal"}
+            </Button>
+          </Magnetic>
         </form>
       </Card>
 
@@ -124,7 +137,10 @@ export function GoalsPageClient({ initialGoals }: { initialGoals: Goal[] }) {
           Active ({active.length})
         </h2>
         {active.length === 0 ? (
-          <p className="text-sm text-[var(--color-text-muted)]">No active goals yet.</p>
+          <p className="text-sm text-[var(--color-text-muted)]">
+            No goals set yet — add one above so your Growth Partner and Growth Blueprint can align
+            recommendations to it.
+          </p>
         ) : (
           <ul className="space-y-4">
             {active.map((goal) => {

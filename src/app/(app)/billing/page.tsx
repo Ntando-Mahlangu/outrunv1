@@ -12,6 +12,7 @@ import { getRefundRequestsForOrg } from "@/lib/billing/refunds";
 import { CheckoutButton } from "@/components/billing/checkout-button";
 import { ManageBillingButton } from "@/components/billing/manage-billing-button";
 import { RefundRequestPanel } from "@/components/billing/refund-request-panel";
+import { SplitHeading } from "@/components/motion/split-heading";
 
 const USAGE_LABELS: Record<string, string> = {
   COMPANY_SEARCH: "Company searches",
@@ -39,9 +40,11 @@ export default async function BillingPage() {
   return (
     <div className="animate-fade-in space-y-8">
       <div>
-        <h1 className="text-2xl font-light tracking-tight text-[var(--color-text-primary)]">
-          Billing
-        </h1>
+        <SplitHeading
+          as="h1"
+          text="Billing"
+          className="text-2xl font-light tracking-tight text-[var(--color-text-primary)]"
+        />
         <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
           Choose your Growth Partner.
         </p>

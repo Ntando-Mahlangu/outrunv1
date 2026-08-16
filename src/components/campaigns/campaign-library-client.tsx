@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { FormError } from "@/components/ui/form-error";
+import { SplitHeading } from "@/components/motion/split-heading";
 
 const CATEGORIES: { value: string; label: string }[] = [
   { value: "COLD_OUTREACH", label: "Cold Outreach" },
@@ -84,9 +85,11 @@ export function CampaignLibraryClient({ initialTemplates }: { initialTemplates: 
     <div className="animate-fade-in space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-light tracking-tight text-[var(--color-text-primary)]">
-            Campaign Library
-          </h1>
+          <SplitHeading
+            as="h1"
+            text="Campaign Library"
+            className="text-2xl font-light tracking-tight text-[var(--color-text-primary)]"
+          />
           <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
             Reusable campaign templates, saved from any campaign you&apos;ve built. Editable
             anytime.

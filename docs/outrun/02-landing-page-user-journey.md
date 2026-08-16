@@ -28,7 +28,7 @@ Pricing
 FAQ
 Sign In
 Primary CTA
-Start Free
+Start Now
 Navigation should remain fixed while scrolling.
 Glassmorphism effect on scroll.
 Smooth transitions.
@@ -49,7 +49,7 @@ SUBHEADING
 Outrun understands your business, finds your best opportunities, builds your growth strategy and prepares campaigns before you even start working.
 ________________________________________
 PRIMARY CTA
-Start Free
+Start Now
 ________________________________________
 SECONDARY CTA
 Watch Demo
@@ -290,7 +290,7 @@ Ready to Stop Guessing?
 Subheading
 Let Outrun build your first growth strategy today.
 Primary Button
-Start Free
+Start Now
 Secondary Button
 Book Demo
 Background animation.

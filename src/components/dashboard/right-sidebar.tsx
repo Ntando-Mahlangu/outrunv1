@@ -30,10 +30,10 @@ export function RightSidebar({
       <Card>
         <h2 className="text-sm font-medium text-[var(--color-text-primary)]">AI Assistant</h2>
         <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-          {assistantTeaser ?? "Ask the CEO anything about your business."}
+          {assistantTeaser ?? "Ask your Growth Partner anything about your business."}
         </p>
         <Link
-          href="/ceo-agent"
+          href="/growth-partner"
           className="mt-3 inline-block text-sm text-[var(--color-accent-text)] hover:underline"
         >
           Open chat →

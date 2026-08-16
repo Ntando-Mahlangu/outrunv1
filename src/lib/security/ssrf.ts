@@ -60,13 +60,33 @@ export function isPrivateAddress(address: string, family: number): boolean {
  * redirect — a URL that passes validation once but redirects to
  * 169.254.169.254 (or resolves there via DNS rebinding) is still refused
  * on the actual connection, not just the initial request.
+ *
+ * node:dns's own lookup() has no built-in timeout — a slow or blackholed
+ * resolver can hang it indefinitely. Since this function is the `lookup`
+ * plugged into every connection undici's Agent makes, that hang sits
+ * underneath fetch()'s own AbortSignal.timeout() rather than inside it,
+ * so the delivery-level timeout in dispatch.ts can't be relied on alone
+ * to bound it. LOOKUP_TIMEOUT_MS below is the actual backstop.
  */
+const LOOKUP_TIMEOUT_MS = 5_000;
+
 function safeLookup(
   hostname: string,
   options: dns.LookupOptions,
   callback: (err: NodeJS.ErrnoException | null, address: string | dns.LookupAddress[], family?: number) => void,
 ): void {
+  let settled = false;
+  const timer = setTimeout(() => {
+    if (settled) return;
+    settled = true;
+    callback(new Error(`DNS lookup for ${hostname} timed out.`), "");
+  }, LOOKUP_TIMEOUT_MS);
+
   dns.lookup(hostname, { all: true, verbatim: true }, (err, addresses) => {
+    if (settled) return;
+    clearTimeout(timer);
+    settled = true;
+
     if (err) {
       callback(err, "");
       return;

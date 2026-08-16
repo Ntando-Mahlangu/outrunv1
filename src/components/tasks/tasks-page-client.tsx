@@ -9,7 +9,10 @@ import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
 import { ImpactBadge } from "@/components/ui/badge";
-import type { CoachFeedbackData } from "@/lib/ceo-agent/coach-schema";
+import type { CoachFeedbackData } from "@/lib/growth-partner/coach-schema";
+import { SplitHeading } from "@/components/motion/split-heading";
+import { Magnetic } from "@/components/motion/magnetic";
+import { readJsonSafely } from "@/lib/fetch-json";
 
 const IMPACTS: TaskImpact[] = ["High", "Medium", "Low"];
 
@@ -30,45 +33,53 @@ export function TasksPageClient({ initialTasks }: { initialTasks: Task[] }) {
     setError(null);
     setIsAdding(true);
 
-    const res = await fetch("/api/tasks", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, description, impact }),
-    });
-    const body = await res.json();
-    setIsAdding(false);
+    try {
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, description, impact }),
+      });
+      const body = await readJsonSafely(res);
+      if (!res.ok) throw new Error((body?.error as string) ?? "We couldn't add that task.");
 
-    if (!res.ok) {
-      setError(body.error ?? "We couldn't add that task.");
-      return;
+      setTasks((prev) => [body!.task as Task, ...prev]);
+      setTitle("");
+      setDescription("");
+      setImpact("Medium");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "We couldn't add that task.");
+    } finally {
+      setIsAdding(false);
     }
-
-    setTasks((prev) => [body.task, ...prev]);
-    setTitle("");
-    setDescription("");
-    setImpact("Medium");
   }
 
   async function updateStatus(id: string, status: "COMPLETED" | "DISMISSED" | "PENDING") {
+    setError(null);
     setBusyId(id);
-    const res = await fetch(`/api/tasks/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
-    const body = await res.json();
-    setBusyId(null);
-    if (res.ok) {
-      setTasks((prev) => prev.map((t) => (t.id === id ? body.task : t)));
+    try {
+      const res = await fetch(`/api/tasks/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      const body = await readJsonSafely(res);
+      if (!res.ok) throw new Error((body?.error as string) ?? "We couldn't update that task.");
+      setTasks((prev) => prev.map((t) => (t.id === id ? (body!.task as Task) : t)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "We couldn't update that task.");
+    } finally {
+      setBusyId(null);
     }
   }
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-light tracking-tight text-[var(--color-text-primary)]">
-          Growth Tasks
-        </h1>
+        <SplitHeading
+          as="h1"
+          text="Growth Tasks"
+          className="text-2xl font-light tracking-tight text-[var(--color-text-primary)]"
+        />
         <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
           Every roadmap recommendation lives here as a completable task, alongside anything you add
           yourself.
@@ -106,9 +117,11 @@ export function TasksPageClient({ initialTasks }: { initialTasks: Task[] }) {
               ))}
             </Select>
           </div>
-          <Button type="submit" disabled={isAdding}>
-            {isAdding ? "Adding…" : "Add task"}
-          </Button>
+          <Magnetic strength={0.15} className="inline-block">
+            <Button type="submit" disabled={isAdding}>
+              {isAdding ? "Adding…" : "Add task"}
+            </Button>
+          </Magnetic>
         </form>
       </Card>
 

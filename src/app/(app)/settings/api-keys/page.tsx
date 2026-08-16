@@ -5,6 +5,7 @@ import { canManageApiKeys } from "@/lib/teams/permissions";
 import { isFeatureEnabled, FEATURE_FLAGS } from "@/lib/billing/feature-flags";
 import { listApiKeys } from "@/lib/api-keys/service";
 import { ApiKeysSection } from "@/components/team/api-keys-section";
+import { SplitHeading } from "@/components/motion/split-heading";
 
 export default async function ApiKeysSettingsPage() {
   const session = await getCurrentSession();
@@ -22,9 +23,11 @@ export default async function ApiKeysSettingsPage() {
   return (
     <div className="animate-fade-in space-y-8">
       <div>
-        <h1 className="text-2xl font-light tracking-tight text-[var(--color-text-primary)]">
-          API Keys
-        </h1>
+        <SplitHeading
+          as="h1"
+          text="API Keys"
+          className="text-2xl font-light tracking-tight text-[var(--color-text-primary)]"
+        />
         <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
           Programmatic, read-only access to your Outrun data.
         </p>

@@ -8,6 +8,7 @@ import { NewCampaignForm } from "@/components/campaigns/new-campaign-form";
 import * as companyRepository from "@/lib/repositories/company-repository";
 import { getLeadListsWithResearchedCompaniesForOrg } from "@/lib/prospects/lead-lists";
 import { isBrandVoice } from "@/lib/org/brand-voice";
+import { SplitHeading } from "@/components/motion/split-heading";
 
 export default async function NewCampaignPage({
   searchParams,
@@ -40,9 +41,11 @@ export default async function NewCampaignPage({
         <Link href="/campaigns" className="text-sm text-[var(--color-accent-text)] hover:underline">
           ← Campaigns
         </Link>
-        <h1 className="mt-2 text-2xl font-light tracking-tight text-[var(--color-text-primary)]">
-          Create Campaign
-        </h1>
+        <SplitHeading
+          as="h1"
+          text="Create Campaign"
+          className="mt-2 text-2xl font-light tracking-tight text-[var(--color-text-primary)]"
+        />
       </div>
 
       {companies.length === 0 ? (

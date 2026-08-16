@@ -17,9 +17,9 @@ const PER_TYPE_LIMIT = 5;
 //     business memory (docs/outrun/10) — substring-matching those
 //     against company/campaign names would just return nothing useful.
 //     Deliberately NOT calling the AI on every keystroke here: this
-//     route only returns a link to /ceo-agent with the question
+//     route only returns a link to /growth-partner with the question
 //     attached, so the AI only actually runs once the user commits to
-//     it (see the ceo-agent page's `ask` param).
+//     it (see the growth-partner page's `ask` param).
 //   - "best-campaign" is a real, deterministic ranking off actual
 //     send/reply data (src/lib/search/best-campaign.ts) — no AI needed.
 //   - everything else is a plain record lookup, same as before.
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
         type: "Ask the AI Coach",
         label: `Ask: "${intent.question}"`,
         sublabel: "Uses everything Outrun knows about your business",
-        href: `/ceo-agent?ask=${encodeURIComponent(intent.question)}`,
+        href: `/growth-partner?ask=${encodeURIComponent(intent.question)}`,
       },
     ];
     return NextResponse.json({ results });

@@ -1,3 +1,6 @@
+import { Reveal } from "@/components/motion/reveal";
+import { ConcentricRings } from "@/components/motion/backgrounds";
+
 // docs/outrun/02 "TRUST BAR" — "Future company logos can be added later.
 // Until then use tasteful placeholders. Never use fake testimonials. Never
 // invent customer logos." These are abstract geometric marks, deliberately
@@ -7,8 +10,9 @@ const PLACEHOLDER_MARKS = ["◆", "▲", "●", "■", "◈"];
 
 export function TrustBar() {
   return (
-    <section className="border-y border-[var(--color-border)] bg-[var(--color-bg-secondary)]/40 py-10">
-      <div className="mx-auto max-w-5xl px-6">
+    <section className="relative overflow-hidden border-y border-[var(--color-border)] bg-[var(--color-bg-secondary)]/40 py-10">
+      <ConcentricRings />
+      <Reveal className="relative z-10 mx-auto max-w-5xl px-6">
         <p className="text-center text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
           Trusted by ambitious businesses worldwide
         </p>
@@ -23,7 +27,7 @@ export function TrustBar() {
             </span>
           ))}
         </div>
-      </div>
+      </Reveal>
     </section>
   );
 }

@@ -7,8 +7,9 @@ import { SignOutButton } from "@/components/sign-out-button";
 import { WorkspaceSwitcher } from "@/components/team/workspace-switcher";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { GlobalSearch } from "@/components/dashboard/global-search";
-import { GlobalChatWidget } from "@/components/ceo-agent/global-chat-widget";
+import { GlobalChatWidget } from "@/components/growth-partner/global-chat-widget";
 import { Logo } from "@/components/brand/logo";
+import { GenerativeLattice } from "@/components/motion/backgrounds";
 
 export default async function DashboardLayout({
   children,
@@ -33,8 +34,11 @@ export default async function DashboardLayout({
     : [];
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg-primary)]">
-      <header className="flex h-16 items-center justify-between border-b border-[var(--color-border)] px-6">
+    <div className="relative min-h-screen bg-[var(--color-bg-primary)]">
+      <div className="pointer-events-none fixed inset-0 z-0 opacity-40">
+        <GenerativeLattice />
+      </div>
+      <header className="relative z-10 flex h-16 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-bg-primary)] px-6">
         <Logo />
         <div className="flex items-center gap-4">
           {organization && <GlobalSearch />}
@@ -52,7 +56,7 @@ export default async function DashboardLayout({
         </div>
       </header>
 
-      <div className="mx-auto flex max-w-6xl gap-8 px-6 py-8">
+      <div className="relative z-10 mx-auto flex max-w-6xl gap-8 px-6 py-8">
         <aside className="hidden w-56 shrink-0 space-y-6 sm:block">
           <SidebarNav />
           <div className="border-t border-[var(--color-border)] pt-4">

@@ -16,10 +16,24 @@ const microsoftConfigured = Boolean(
   process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET,
 );
 
+// Better Auth only trusts baseURL's own origin by default — it rejects
+// every other origin with "Invalid origin", even a legitimate one. The
+// production domain is reachable at both the apex and "www" once a
+// custom domain is attached (outrunv1.online's own canonical URL, see
+// src/app/layout.tsx's SITE_URL, is apex-only), so without an explicit
+// list here, whichever variant doesn't exactly match BETTER_AUTH_URL
+// fails real sign-ups/sign-ins for no reason a user did anything wrong.
+const productionOrigins = ["https://outrunv1.online", "https://www.outrunv1.online"];
+const configuredOrigin = process.env.BETTER_AUTH_URL;
+const trustedOrigins = Array.from(
+  new Set([...productionOrigins, ...(configuredOrigin ? [configuredOrigin] : [])]),
+);
+
 export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
+  trustedOrigins,
 
   emailAndPassword: {
     enabled: true,

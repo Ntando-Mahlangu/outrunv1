@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { FormError } from "@/components/ui/form-error";
+import { readJsonSafely } from "@/lib/fetch-json";
 
 const RELATIONSHIP_STATUS_LABEL: Record<ContactRelationshipStatus, string> = {
   NEW: "New",
@@ -41,59 +42,70 @@ export function ContactsPanel({
     setError(null);
     setIsAdding(true);
 
-    const res = await fetch(`/api/prospects/${companyId}/contacts`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, role, email, phone }),
-    });
-    const body = await res.json();
-    setIsAdding(false);
+    try {
+      const res = await fetch(`/api/prospects/${companyId}/contacts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, role, email, phone }),
+      });
+      const body = await readJsonSafely(res);
+      if (!res.ok) throw new Error((body?.error as string) ?? "We couldn't add that contact.");
 
-    if (!res.ok) {
-      setError(body.error ?? "We couldn't add that contact.");
-      return;
+      setContacts((prev) => [...prev, body!.contact as Contact]);
+      setName("");
+      setRole("");
+      setEmail("");
+      setPhone("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "We couldn't add that contact.");
+    } finally {
+      setIsAdding(false);
     }
-
-    setContacts((prev) => [...prev, body.contact]);
-    setName("");
-    setRole("");
-    setEmail("");
-    setPhone("");
   }
 
   async function handleDelete(contactId: string) {
+    setError(null);
     setBusyId(contactId);
-    const res = await fetch(`/api/prospects/${companyId}/contacts/${contactId}`, {
-      method: "DELETE",
-    });
-    setBusyId(null);
-    if (res.ok) {
+    try {
+      const res = await fetch(`/api/prospects/${companyId}/contacts/${contactId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const body = await readJsonSafely(res);
+        throw new Error((body?.error as string) ?? "We couldn't remove that contact.");
+      }
       setContacts((prev) => prev.filter((c) => c.id !== contactId));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "We couldn't remove that contact.");
+    } finally {
+      setBusyId(null);
     }
   }
 
   async function handleStatusChange(contactId: string, relationshipStatus: ContactRelationshipStatus) {
     setBusyId(contactId);
     setError(null);
-    const res = await fetch(`/api/prospects/${companyId}/contacts/${contactId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ relationshipStatus }),
-    });
-    const body = await res.json();
-    setBusyId(null);
-    if (!res.ok) {
-      setError(body.error ?? "We couldn't update that contact.");
-      return;
+    try {
+      const res = await fetch(`/api/prospects/${companyId}/contacts/${contactId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ relationshipStatus }),
+      });
+      const body = await readJsonSafely(res);
+      if (!res.ok) throw new Error((body?.error as string) ?? "We couldn't update that contact.");
+      setContacts((prev) => prev.map((c) => (c.id === contactId ? (body!.contact as Contact) : c)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "We couldn't update that contact.");
+    } finally {
+      setBusyId(null);
     }
-    setContacts((prev) => prev.map((c) => (c.id === contactId ? body.contact : c)));
   }
 
   return (
     <div className="space-y-4">
       {contacts.length === 0 ? (
         <p className="text-sm text-[var(--color-text-muted)]">
-          No contacts added yet for this company.
+          No contacts yet — add the people you actually talk to at this company below.
         </p>
       ) : (
         <ul className="space-y-3">

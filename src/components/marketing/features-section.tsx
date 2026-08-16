@@ -1,4 +1,7 @@
 import { Card } from "@/components/ui/card";
+import { RevealGroup, RevealItem } from "@/components/motion/reveal";
+import { GenerativeLattice } from "@/components/motion/backgrounds";
+import { SplitHeading } from "@/components/motion/split-heading";
 
 const FEATURES = [
   {
@@ -29,19 +32,25 @@ const FEATURES = [
 
 export function FeaturesSection() {
   return (
-    <section id="features" className="mx-auto max-w-5xl px-6 py-20">
-      <h2 className="text-center text-3xl font-light tracking-tight text-[var(--color-text-primary)]">
-        Everything Outrun Does For You
-      </h2>
-      <div className="mt-12 grid gap-6 sm:grid-cols-2">
-        {FEATURES.map((feature) => (
-          <Card key={feature.title} className="p-8">
-            <h3 className="text-lg font-medium text-[var(--color-text-primary)]">
-              {feature.title}
-            </h3>
-            <p className="mt-2 text-sm text-[var(--color-text-secondary)]">{feature.body}</p>
-          </Card>
-        ))}
+    <section id="features" className="relative overflow-hidden py-20">
+      <GenerativeLattice />
+      <div className="relative z-10 mx-auto max-w-5xl px-6">
+        <SplitHeading
+          text="Everything Outrun Does For You"
+          className="text-center text-3xl font-light tracking-tight text-[var(--color-text-primary)]"
+        />
+        <RevealGroup className="mt-12 grid gap-6 sm:grid-cols-2" stagger={0.08}>
+          {FEATURES.map((feature) => (
+            <RevealItem key={feature.title}>
+              <Card interactive className="h-full p-8">
+                <h3 className="text-lg font-medium text-[var(--color-text-primary)]">
+                  {feature.title}
+                </h3>
+                <p className="mt-2 text-sm text-[var(--color-text-secondary)]">{feature.body}</p>
+              </Card>
+            </RevealItem>
+          ))}
+        </RevealGroup>
       </div>
     </section>
   );

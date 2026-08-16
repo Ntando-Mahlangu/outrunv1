@@ -112,7 +112,7 @@ export function formatBusinessContext(context: BusinessContext): string {
   // docs/outrun/08 "GROWTH MEMORY" — patterns the AI Improvement Loop has
   // identified (src/lib/campaigns/improvement-loop.ts) are genuine derived
   // learnings, not just "something happened" — surfaced in their own
-  // section so the CEO Agent treats them as lessons, not recency noise.
+  // section so the Growth Partner treats them as lessons, not recency noise.
   const patternEvents = context.recentEvents.filter((e) => e.type === "PATTERN_IDENTIFIED");
   const otherEvents = context.recentEvents.filter((e) => e.type !== "PATTERN_IDENTIFIED");
 
@@ -124,7 +124,7 @@ export function formatBusinessContext(context: BusinessContext): string {
   }
 
   // docs/outrun/08 "FEEDBACK LOOP" / "RECOMMENDATION HISTORY" — what
-  // happened after previous recommendations, so the CEO Agent doesn't
+  // happened after previous recommendations, so the Growth Partner doesn't
   // repeat suggestions that were already dismissed or underperformed.
   if (context.priorRecommendationOutcomes) {
     lines.push(`Recommendation history: ${context.priorRecommendationOutcomes}`);

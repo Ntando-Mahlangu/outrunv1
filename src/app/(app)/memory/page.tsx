@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { eventLabel } from "@/lib/memory/event-labels";
+import { SplitHeading } from "@/components/motion/split-heading";
 
 export default async function MemoryPage() {
   const session = await getCurrentSession();
@@ -23,9 +24,11 @@ export default async function MemoryPage() {
     <div className="animate-fade-in space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-light tracking-tight text-[var(--color-text-primary)]">
-            AI Memory
-          </h1>
+          <SplitHeading
+            as="h1"
+            text="AI Memory"
+            className="text-2xl font-light tracking-tight text-[var(--color-text-primary)]"
+          />
           <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
             Everything Outrun has learned and done for {organization.name}.
           </p>
