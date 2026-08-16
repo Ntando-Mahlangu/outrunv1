@@ -25,3 +25,15 @@ export function getCompanyDataProvider(): CompanyDataProvider {
 export function isCompanySearchConfigured(): boolean {
   return true;
 }
+
+/**
+ * Surfaced to the client (src/app/api/prospects/search/route.ts) so a zero
+ * results screen can tell the difference between "genuinely nothing out
+ * there" and "running on the free provider, which is a geocoder — good at
+ * resolving addresses and place names, not built for category+location
+ * business search the way Google Places is" (see osm-provider.ts).
+ * Without this, that distinction is invisible and reads as a bug.
+ */
+export function getActiveCompanyDataProviderName(): "google_places" | "openstreetmap" {
+  return process.env.GOOGLE_PLACES_API_KEY ? "google_places" : "openstreetmap";
+}
