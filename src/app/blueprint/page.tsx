@@ -12,7 +12,12 @@ import { isFeatureEnabled, FEATURE_FLAGS } from "@/lib/billing/feature-flags";
 import * as companyRepository from "@/lib/repositories/company-repository";
 import type { BusinessSnapshot, GrowthBlueprintData, WebsiteAnalysis } from "@/lib/growth-blueprint/schema";
 
-export default async function BlueprintPage() {
+export default async function BlueprintPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ blueprintLimitReached?: string }>;
+}) {
+  const { blueprintLimitReached } = await searchParams;
   const session = await getCurrentSession();
   if (!session) redirect("/sign-in");
 
@@ -67,6 +72,17 @@ export default async function BlueprintPage() {
   return (
     <main className="min-h-screen bg-[var(--color-bg-primary)] px-4 py-16 print:bg-white print:px-0 print:py-0">
       <div className="mx-auto max-w-4xl space-y-8">
+        {blueprintLimitReached === "1" && (
+          <div className="rounded-[var(--radius-md)] border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 p-4 text-sm text-[var(--color-text-secondary)] print:hidden">
+            Your business info was saved, but the Free plan includes only one Growth Blueprint —
+            here&apos;s the one you already have.{" "}
+            <Link href="/billing" className="text-[var(--color-accent-text)] hover:underline">
+              Upgrade to Starter
+            </Link>{" "}
+            to regenerate it anytime your business changes.
+          </div>
+        )}
+
         <div className="print:hidden">
           <BlueprintActions
             hasHistory={versionCount > 1}
