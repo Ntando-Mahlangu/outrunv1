@@ -3,6 +3,7 @@ import { after } from "next/server";
 import { UsageEventType } from "@prisma/client";
 import { getCurrentSession } from "@/lib/session";
 import { getCurrentOrganization } from "@/lib/org";
+import { prisma } from "@/lib/prisma";
 import { assertUsageAvailable } from "@/lib/billing/usage";
 import { enqueueJob, runJob } from "@/lib/jobs/queue";
 import { UserFacingError, RateLimitError } from "@/lib/errors";
@@ -37,6 +38,27 @@ export async function POST() {
 
   try {
     await checkRateLimit(`ai:${organization.id}`, RATE_LIMITS.AI.limit, RATE_LIMITS.AI.windowSeconds);
+
+    // Idempotency: /blueprint/generating fires this on mount, and React's
+    // dev-mode double-effect (or a duplicate tab, or a retried request) can
+    // send two POSTs within milliseconds of each other. Without this check,
+    // both pass assertUsageAvailable before either has recorded usage,
+    // enqueue two jobs, and a Free-tier org — which only gets one Blueprint,
+    // ever — has its lifetime allotment burned by a single click before the
+    // first generation even finishes. Returning the in-flight job instead
+    // makes a duplicate call a no-op rather than a second billable attempt.
+    const inFlight = await prisma.job.findFirst({
+      where: {
+        organizationId: organization.id,
+        type: "BLUEPRINT_GENERATION",
+        status: { in: ["PENDING", "RUNNING"] },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    if (inFlight) {
+      return NextResponse.json({ jobId: inFlight.id });
+    }
+
     // Check-only here — the actual generation runs later, asynchronously
     // (see runJob() below), so recording usage happens there, only once
     // it actually succeeds. Recording it here would burn the org's
