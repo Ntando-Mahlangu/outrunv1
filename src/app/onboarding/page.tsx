@@ -301,7 +301,6 @@ export default function OnboardingPage() {
           .map((c) => c.trim())
           .filter(Boolean),
       });
-      router.push("/blueprint/generating");
     } catch (err) {
       setIsSubmitting(false);
       setError(
@@ -309,7 +308,30 @@ export default function OnboardingPage() {
           ? err.message
           : "We couldn't save that. Please try again.",
       );
+      return;
     }
+
+    // Kick off Blueprint generation in the background rather than blocking
+    // on it here — /api/blueprint/generate returns as soon as the job is
+    // enqueued (or the Free-plan limit is checked), it never waits for the
+    // AI generation itself (see the after() call in src/lib/jobs/queue.ts).
+    // A Free account that's already used its one lifetime Blueprint goes
+    // straight to it instead of waiting on one that will never come;
+    // dashboard's own empty state (src/components/dashboard/blueprint-pending.tsx)
+    // shows live progress for everyone else, with a manual retry if this
+    // kickoff itself failed (e.g. a network hiccup) — so the business info
+    // already saved above is never lost behind that.
+    try {
+      const res = await fetch("/api/blueprint/generate", { method: "POST" });
+      const body = await res.json().catch(() => null);
+      if (!res.ok && body?.hasExistingBlueprint) {
+        router.push("/blueprint?blueprintLimitReached=1");
+        return;
+      }
+    } catch {
+      // Ignored — see comment above.
+    }
+    router.push("/dashboard");
   }
 
   return (
@@ -349,7 +371,7 @@ export default function OnboardingPage() {
               onClick={handleContinue}
               disabled={!current.canContinue || isSubmitting}
             >
-              {isSubmitting ? "Saving…" : isLastStep ? "Build My Growth Blueprint" : "Continue"}
+              {isSubmitting ? "Saving…" : isLastStep ? "Get Started" : "Continue"}
             </Button>
           </div>
         </Card>

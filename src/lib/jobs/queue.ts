@@ -150,7 +150,7 @@ export async function runJob(jobId: string): Promise<void> {
         // (src/lib/errors.ts) — anything else (config issues, provider
         // outages, unexpected exceptions) must never reach the client,
         // since job.errorMessage is returned as-is by /api/jobs/[id] and
-        // rendered directly (e.g. src/app/blueprint/generating/page.tsx).
+        // rendered directly (e.g. src/components/growth-blueprint/blueprint-actions.tsx).
         errorMessage:
           error instanceof UserFacingError
             ? error.message
