@@ -60,17 +60,26 @@ export default async function DashboardPage() {
 
   const blueprint = await findLatestForOrg(organization.id);
   if (!blueprint) {
-    const inFlightJob = await prisma.job.findFirst({
-      where: {
-        organizationId: organization.id,
-        type: "BLUEPRINT_GENERATION",
-        status: { in: ["PENDING", "RUNNING"] },
-      },
-    });
+    const [inFlightJob, lastFailedJob] = await Promise.all([
+      prisma.job.findFirst({
+        where: {
+          organizationId: organization.id,
+          type: "BLUEPRINT_GENERATION",
+          status: { in: ["PENDING", "RUNNING"] },
+        },
+      }),
+      prisma.job.findFirst({
+        where: { organizationId: organization.id, type: "BLUEPRINT_GENERATION", status: "FAILED" },
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="w-full max-w-md">
-          <BlueprintPending hasInFlightJob={Boolean(inFlightJob)} />
+          <BlueprintPending
+            hasInFlightJob={Boolean(inFlightJob)}
+            lastFailedError={lastFailedJob?.errorMessage}
+          />
         </div>
       </div>
     );

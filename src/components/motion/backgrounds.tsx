@@ -88,6 +88,10 @@ export function ConcentricRings({ className = "" }: { className?: string }) {
             fill="none"
             stroke={i % 2 === 0 ? "var(--color-accent)" : "var(--color-accent-2)"}
             strokeWidth="1"
+            // See GenerativeLattice's cx/cy fix below for why this is needed:
+            // without it, SSR emits r="undefined" until the client-side
+            // animation loop takes over a moment later.
+            initial={{ opacity: 0.15, r }}
             animate={
               reduceMotion
                 ? undefined
@@ -150,6 +154,15 @@ export function GenerativeLattice({ className = "" }: { className?: string }) {
             cy={n.y}
             r="0.6"
             fill={i % 3 === 0 ? "var(--color-accent-2)" : "var(--color-accent)"}
+            // Framer Motion resolves an animated cx/cy from the `animate`
+            // keyframe array itself when no `initial` is given — server-side
+            // (no browser APIs to read a "current" value from) that resolves
+            // to undefined, so the HTML Next.js actually sends the browser
+            // has cx="undefined"/cy="undefined" until the client-side
+            // animation loop corrects it a moment later. Pinning `initial`
+            // to the same plain values above ensures SSR always emits a
+            // real number.
+            initial={{ cx: n.x, cy: n.y }}
             animate={
               reduceMotion
                 ? undefined
