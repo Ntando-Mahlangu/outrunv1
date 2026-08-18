@@ -164,6 +164,22 @@ The only fix available is a major-version downgrade of `next`
 (`npm audit fix --force`), which is a worse trade than the advisory
 itself. Re-check this after the next Next.js/Better Auth upgrade.
 
+**Known accepted risk (high):** `npm audit` also reports a high-severity
+`deepmerge-ts` stack-exhaustion advisory (GHSA-ggr8-5vv4-36mx), reached
+via `prisma` → `@prisma/config` → `deepmerge-ts`. `prisma` is a
+devDependency — its CLI (and the config-file loader `@prisma/config`
+belongs to) never ships in the deployed app, only `@prisma/client` does —
+so this can't be triggered by anything a request handler does at runtime.
+No prisma release fixes it: every 6.x version through the latest 7.x
+(checked exhaustively up to 7.9.1) still depends on the same vulnerable
+`deepmerge-ts@7.1.5`; the only "fix" `npm audit fix --force` offers is an
+unstable `prisma@6.13.0-dev.1` prerelease, a worse trade than the
+advisory itself. CI's audit step (`.github/workflows/ci.yml`)
+acknowledges this specific finding by package name (`deepmerge-ts`,
+`@prisma/config`, `prisma`) rather than skipping the audit gate
+entirely — any other high/critical finding still fails the build.
+Re-check once Prisma ships a fix upstream.
+
 ## 8. Observability
 
 Every server-side catch block calls `captureError()`
