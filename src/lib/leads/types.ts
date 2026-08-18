@@ -10,6 +10,24 @@ export type RawCompanyResult = {
   reviewCount: number | null;
 };
 
+/** A single OSM tag (e.g. { key: "craft", value: "plumber" }) — see
+ * src/lib/leads/osm-provider.ts for how these drive an Overpass query. */
+export type OsmTag = { key: string; value: string };
+
+/**
+ * What src/lib/leads/query-parser.ts hands to a provider's search(). Every
+ * provider gets the same query object but reads only what its own backend
+ * can use: placesQuery (a combined industry+location phrase) is built for
+ * Google Places' Text Search; location and osmTags are built for
+ * OpenStreetMap's Overpass API, which — unlike Places — has no free-text
+ * search and needs the location and business category kept apart.
+ */
+export type CompanySearchQuery = {
+  placesQuery: string;
+  location: string;
+  osmTags: OsmTag[];
+};
+
 /**
  * Every lead-data vendor implements this one interface (docs/outrun/11,
  * docs/outrun/06 "API ARCHITECTURE" — never couple the app to one
@@ -17,5 +35,5 @@ export type RawCompanyResult = {
  * writing one new class, not touching search/scoring/UI code.
  */
 export interface CompanyDataProvider {
-  search(query: string): Promise<RawCompanyResult[]>;
+  search(query: CompanySearchQuery): Promise<RawCompanyResult[]>;
 }

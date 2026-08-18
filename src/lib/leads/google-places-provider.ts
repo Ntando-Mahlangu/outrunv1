@@ -1,4 +1,4 @@
-import type { CompanyDataProvider, RawCompanyResult } from "./types";
+import type { CompanyDataProvider, CompanySearchQuery, RawCompanyResult } from "./types";
 import { withRetry, HttpError } from "@/lib/resilience/retry";
 
 const FIELD_MASK = [
@@ -28,11 +28,12 @@ type PlacesTextSearchResponse = {
 export class GooglePlacesProvider implements CompanyDataProvider {
   constructor(private apiKey: string) {}
 
-  async search(query: string): Promise<RawCompanyResult[]> {
-    // Expects an industry+location phrase, not a raw free-text request —
-    // src/lib/leads/query-parser.ts strips qualifiers Places can't
-    // search on (funding, hiring activity, tech stack, etc.) before
-    // this is called.
+  async search(query: CompanySearchQuery): Promise<RawCompanyResult[]> {
+    // placesQuery is an industry+location phrase, not a raw free-text
+    // request — src/lib/leads/query-parser.ts strips qualifiers Places
+    // can't search on (funding, hiring activity, tech stack, etc.) before
+    // this is called. location/osmTags exist only for OpenStreetMap's
+    // Overpass API (see osm-provider.ts) and don't apply here.
     const data = await withRetry(async () => {
       const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
         method: "POST",
@@ -41,7 +42,7 @@ export class GooglePlacesProvider implements CompanyDataProvider {
           "X-Goog-Api-Key": this.apiKey,
           "X-Goog-FieldMask": FIELD_MASK,
         },
-        body: JSON.stringify({ textQuery: query }),
+        body: JSON.stringify({ textQuery: query.placesQuery }),
         signal: AbortSignal.timeout(10_000),
       });
 

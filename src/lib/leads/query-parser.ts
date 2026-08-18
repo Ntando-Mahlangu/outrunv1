@@ -1,9 +1,14 @@
 import { z } from "zod";
 import { getAIProvider, isAIConfigured } from "@/lib/ai";
 import type { RawCompanyResult } from "./types";
+import { ALLOWED_OSM_TAG_KEYS, OSM_TAG_REFERENCE } from "./osm-tags";
 
 const parsedQuerySchema = z.object({
   placesQuery: z.string(),
+  location: z.string(),
+  osmTags: z
+    .array(z.object({ key: z.string(), value: z.string() }))
+    .max(5),
   postFilters: z.object({
     requireWebsite: z.boolean().nullable(),
     requireNoWebsite: z.boolean().nullable(),
@@ -19,6 +24,19 @@ const parsedQueryJsonSchema = {
   type: "object",
   properties: {
     placesQuery: { type: "string" },
+    location: { type: "string" },
+    osmTags: {
+      type: "array",
+      maxItems: 5,
+      items: {
+        type: "object",
+        properties: {
+          key: { type: "string" },
+          value: { type: "string" },
+        },
+        required: ["key", "value"],
+      },
+    },
     postFilters: {
       type: "object",
       properties: {
@@ -31,41 +49,51 @@ const parsedQueryJsonSchema = {
     },
     unsupportedIntents: { type: "array", items: { type: "string" } },
   },
-  required: ["placesQuery", "postFilters", "unsupportedIntents"],
+  required: ["placesQuery", "location", "osmTags", "postFilters", "unsupportedIntents"],
 };
 
+const OSM_TAG_REFERENCE_TEXT = OSM_TAG_REFERENCE.map((r) => `${r.category} → ${r.key}=${r.value}`).join("\n");
+
 // docs/outrun/06 "GLOBAL SEARCH" — "The AI should interpret intent
-// rather than relying on exact keywords." Google Places' own Text
-// Search already handles plain industry+location phrasing well, but it
-// has no concept of qualifiers like "that recently hired staff" or
-// "using HubSpot" — passed through verbatim, those words just pollute
-// the text match. This step splits a free-text query into:
+// rather than relying on exact keywords." Google Places' Text Search
+// handles a combined industry+location phrase well, but OpenStreetMap's
+// Overpass API (src/lib/leads/osm-provider.ts) has no free-text search at
+// all — it can only filter by structured tag within a geographic area, so
+// the location and business-type parts of the request have to come out
+// separately, not as one phrase. This step splits a free-text query into:
 //   1. placesQuery — a clean industry+location phrase for Places
-//   2. postFilters — qualifiers Outrun can actually verify from data
-//      Places itself returns (website presence, rating, review count)
-//   3. unsupportedIntents — everything else mentioned (funding, hiring,
+//   2. location / osmTags — the same request, decomposed for Overpass
+//   3. postFilters — qualifiers Outrun can actually verify from data
+//      either directory returns (website presence, rating, review count)
+//   4. unsupportedIntents — everything else mentioned (funding, hiring,
 //      tech stack, "weak SEO" beyond having no site at all) that gets
 //      surfaced to the user honestly instead of silently dropped or,
 //      worse, faked as a filter Outrun can't actually check.
-const SYSTEM_PROMPT = `You turn a plain-English prospecting request into a structured search for a business directory (e.g. Google Places or OpenStreetMap).
+const SYSTEM_PROMPT = `You turn a plain-English prospecting request into a structured search that can run against two different business directories: Google Places (a full-text search engine) and OpenStreetMap (which has no full-text search at all — only structured tags within a geographic area).
 
-This directory can only search by business name/type/category and location text, and its results only ever carry: name, category, website (present or not), phone, address, and — depending on the active provider — star rating and review count (some providers, like OpenStreetMap, never return these). It has no data on funding, hiring activity, technology stack, revenue, employee count, or website quality beyond "has a site or doesn't."
+Neither directory has data on funding, hiring activity, technology stack, revenue, employee count, or website quality beyond "has a site or doesn't."
 
-Rules:
-- placesQuery: a short, clean phrase combining the industry/business type and location — the part Places can actually search on. Drop qualifiers Places can't use.
-- postFilters: only set a field if the request clearly asked for it AND it maps to a real Places field:
+Produce all of the following:
+- placesQuery: a short, clean phrase combining the industry/business type and location — what Google Places' text search should run on. Drop qualifiers Places can't use.
+- location: JUST the geographic part of the request (city, region, neighborhood — resolve "near me"-style phrasing to nothing if no real place is named) — no business type, no qualifiers. Correct obvious misspellings (e.g. "chicargo" → "Chicago"). This drives a separate geocoding step, so it must stand alone as a place name.
+- osmTags: up to 3 candidate OpenStreetMap tags (key/value pairs) that best match the requested business type. Reference — a known-correct key=value pair for common categories (use one of these verbatim when the category matches; for a closely related category not listed, extrapolate carefully in the same key/value style rather than guessing a shape that doesn't fit real OSM tagging):
+${OSM_TAG_REFERENCE_TEXT}
+  Allowed keys are only: ${ALLOWED_OSM_TAG_KEYS.join(", ")}. If the request doesn't name a specific business type (e.g. "any businesses in Austin"), return an empty array — never invent a tag for a category you're not confident about.
+- postFilters: only set a field if the request clearly asked for it AND it maps to a real field either directory returns:
   - requireNoWebsite: true if they asked for businesses without a website / with no online presence
   - requireWebsite: true if they asked for businesses that do have a website
-  - minRating / minReviewCount: only if they gave a concrete quality/popularity bar
+  - minRating / minReviewCount: only if they gave a concrete quality/popularity bar (OpenStreetMap never returns these, so they're a no-op there)
   Leave any field null if not clearly requested. Never guess a number that wasn't implied.
-- unsupportedIntents: list every qualifier from the request that Places cannot verify (e.g. "raised funding", "recently hired staff", "uses HubSpot", "weak SEO", "growing fast") in plain English, exactly as the kind of claim it represents. If there are none, return an empty array. Never fold these into placesQuery or postFilters — never invent a way to "check" something Places can't tell you.`;
+- unsupportedIntents: list every qualifier from the request that neither directory can verify (e.g. "raised funding", "recently hired staff", "uses HubSpot", "weak SEO", "growing fast") in plain English, exactly as the kind of claim it represents. If there are none, return an empty array. Never fold these into placesQuery, location, osmTags, or postFilters — never invent a way to "check" something neither directory can tell you.`;
 
 export async function parseSearchQuery(query: string): Promise<ParsedSearchQuery> {
   if (!isAIConfigured()) {
     // Honest degradation: without an AI provider, fall back to exactly
-    // what the user typed — the same behavior this feature had before
-    // this parsing step existed — rather than a half-working parse.
-    return { placesQuery: query, postFilters: emptyFilters(), unsupportedIntents: [] };
+    // what the user typed for Places, and a best-effort location guess
+    // for Overpass — the same behavior this feature had before this
+    // parsing step existed, extended just enough that OpenStreetMap search
+    // still has something to geocode.
+    return fallbackParse(query);
   }
 
   try {
@@ -80,8 +108,28 @@ export async function parseSearchQuery(query: string): Promise<ParsedSearchQuery
   } catch {
     // A parsing failure shouldn't block the search itself — fall back
     // to the raw query, same as the unconfigured case above.
-    return { placesQuery: query, postFilters: emptyFilters(), unsupportedIntents: [] };
+    return fallbackParse(query);
   }
+}
+
+function fallbackParse(query: string): ParsedSearchQuery {
+  return {
+    placesQuery: query,
+    location: fallbackLocation(query),
+    osmTags: [],
+    postFilters: emptyFilters(),
+    unsupportedIntents: [],
+  };
+}
+
+// Best-effort split for when there's no AI to ask: most natural
+// prospecting phrases ("plumbers in Chicago", "cafes near Austin") put the
+// location after "in"/"near"/"around" — good enough to geocode even
+// without understanding the request. Falls back to the whole query when no
+// such split point is found.
+function fallbackLocation(query: string): string {
+  const match = query.match(/\b(?:in|near|around)\s+(.+)$/i);
+  return match ? match[1]!.trim() : query.trim();
 }
 
 function emptyFilters(): ParsedSearchQuery["postFilters"] {

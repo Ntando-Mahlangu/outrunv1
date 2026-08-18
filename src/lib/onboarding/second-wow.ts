@@ -68,7 +68,13 @@ export async function generateSecondWow(
   }
 
   const query = `${icp.industry} in ${icp.location}`;
-  const results = await provider.search(query);
+  // No AI query-parsing call in this path (unlike /api/prospects/search) —
+  // this already-multi-step onboarding chain shouldn't spend another AI
+  // call just to derive OSM tags, so osmTags is left empty. OsmPlacesProvider
+  // falls back to generic business tags in that case (see osm-provider.ts),
+  // which is an honest degrade: still scoped to the ICP's location, just not
+  // filtered to its industry on the free provider.
+  const results = await provider.search({ placesQuery: query, location: icp.location, osmTags: [] });
   if (results.length === 0) return empty;
 
   const companies = await Promise.all(

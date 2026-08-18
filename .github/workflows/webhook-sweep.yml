@@ -28,5 +28,10 @@ jobs:
             echo "APP_URL and CRON_SECRET repo secrets are not set — skipping. See DEPLOYMENT.md."
             exit 0
           fi
-          curl -sf --max-time 60 -X GET "${{ secrets.APP_URL }}/api/cron/webhooks" \
+          # --retry absorbs a transient backend blip (a cold-start timeout,
+          # a brief DB hiccup) instead of failing the whole scheduled run
+          # over one slow response — curl already only retries on
+          # actually-transient outcomes (429/5xx/timeouts), so a real,
+          # persistent failure (e.g. a bad secret, a 401) still fails loudly.
+          curl -sf --max-time 60 --retry 3 --retry-delay 5 -X GET "${{ secrets.APP_URL }}/api/cron/webhooks" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

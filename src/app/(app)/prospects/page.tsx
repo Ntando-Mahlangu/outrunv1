@@ -141,13 +141,12 @@ export default function ProspectsPage() {
           <p>No matching businesses found. Try a broader description or a different location.</p>
           {interpretation?.provider === "openstreetmap" && (
             <p>
-              You&apos;re on the free OpenStreetMap data source, which is built for looking up
-              addresses and named places rather than searching by business category — it often
-              can&apos;t answer &quot;{interpretation.searchedFor}&quot;-style queries even when
-              matching businesses exist. A precise, correctly-spelled place name (e.g. a
-              neighborhood or landmark) sometimes helps, but adding a Google Places API key to
-              your Outrun deployment is the reliable fix for category searches like this — ask
-              whoever manages your Outrun hosting to set{" "}
+              You&apos;re on the free OpenStreetMap data source — its coverage comes entirely from
+              community mapping, so results depend on how thoroughly businesses in this area have
+              actually been mapped, and can be patchy outside well-mapped cities. A broader
+              category or a bigger nearby city sometimes turns up more; connecting a Google Places
+              API key to your Outrun deployment is the reliable fix for consistently dense results
+              — ask whoever manages your Outrun hosting to set{" "}
               <code className="text-[var(--color-text-secondary)]">GOOGLE_PLACES_API_KEY</code>.
             </p>
           )}

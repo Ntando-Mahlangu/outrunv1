@@ -21,12 +21,28 @@ import { FormError } from "@/components/ui/form-error";
 const POLL_INTERVAL_MS = 5000;
 const MAX_POLLS = 40; // ~3.3 minutes, matching the "1-3 minutes" copy below
 
-export function BlueprintPending({ hasInFlightJob }: { hasInFlightJob: boolean }) {
+export function BlueprintPending({
+  hasInFlightJob,
+  lastFailedError,
+}: {
+  hasInFlightJob: boolean;
+  lastFailedError?: string | null;
+}) {
   const router = useRouter();
-  const [isGenerating, setIsGenerating] = useState(hasInFlightJob);
   const [isStarting, setIsStarting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [startError, setStartError] = useState<string | null>(null);
+  // Bridges the gap between clicking "Generate" and the first refresh
+  // below actually confirming it server-side — cleared unconditionally
+  // once that refresh fires, never based on whether hasInFlightJob
+  // visibly changed. A job that fails fast (e.g. no AI provider
+  // configured) can go PENDING -> FAILED between one poll and the next,
+  // so hasInFlightJob may go straight from false to false and never
+  // register as a "change" at all; gating the reset on a transition
+  // left this screen stuck on "Building..." forever in exactly that case.
+  const [optimisticallyGenerating, setOptimisticallyGenerating] = useState(false);
   const pollCountRef = useRef(0);
+
+  const isGenerating = hasInFlightJob || optimisticallyGenerating;
 
   useEffect(() => {
     if (!isGenerating) return;
@@ -39,21 +55,22 @@ export function BlueprintPending({ hasInFlightJob }: { hasInFlightJob: boolean }
         return;
       }
       router.refresh();
+      setOptimisticallyGenerating(false);
     }, POLL_INTERVAL_MS);
 
     return () => clearInterval(interval);
   }, [isGenerating, router]);
 
   async function start() {
-    setError(null);
+    setStartError(null);
     setIsStarting(true);
     try {
       const res = await fetch("/api/blueprint/generate", { method: "POST" });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Something went wrong.");
-      setIsGenerating(true);
+      setOptimisticallyGenerating(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      setStartError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
       setIsStarting(false);
     }
@@ -82,7 +99,7 @@ export function BlueprintPending({ hasInFlightJob }: { hasInFlightJob: boolean }
       <p className="text-sm text-[var(--color-text-secondary)]">
         Generate it to unlock Mission Control, your Growth Score, and AI Opportunities.
       </p>
-      <FormError message={error} />
+      <FormError message={startError ?? lastFailedError ?? null} />
       <Button onClick={start} disabled={isStarting}>
         {isStarting ? "Starting…" : "Generate Growth Blueprint"}
       </Button>
