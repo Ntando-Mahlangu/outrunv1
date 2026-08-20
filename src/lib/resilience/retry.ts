@@ -29,7 +29,16 @@ function extractStatus(error: unknown): number | null {
  */
 function isRetryableByDefault(error: unknown): boolean {
   if (error instanceof TypeError) return true; // fetch-level network failure
-  if (error instanceof DOMException && error.name === "AbortError") return true; // timeout
+  // A manual AbortController.abort() (no reason given) throws "AbortError".
+  // AbortSignal.timeout(ms) — what every fetch call in this codebase
+  // actually uses — throws "TimeoutError" instead once the timer elapses
+  // (that's the DOMException name the spec gives it, not "AbortError").
+  // Without this second name, a timeout NEVER retried at all: it fell
+  // through every check below to "not retryable" and failed immediately
+  // on the very first attempt, indistinguishable from a genuine 4xx.
+  if (error instanceof DOMException && (error.name === "AbortError" || error.name === "TimeoutError")) {
+    return true;
+  }
   const status = extractStatus(error);
   if (status == null) return false;
   return status === 429 || (status >= 500 && status < 600);

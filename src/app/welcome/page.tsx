@@ -15,12 +15,20 @@ export default async function WelcomePage() {
   const membership = await prisma.membership.findFirst({
     where: { userId: session.user.id },
     include: {
-      organization: { include: { growthBlueprints: { select: { id: true }, take: 1 } } },
+      organization: { include: { businessProfile: { select: { id: true } } } },
     },
     orderBy: { createdAt: "asc" },
   });
 
-  if (membership?.organization.growthBlueprints.length) {
+  // Whether onboarding is done, not whether it happened to produce a
+  // Blueprint — those are separate outcomes since generation runs in the
+  // background and can still be pending, or have failed, once the user is
+  // already in the app (see src/app/onboarding/page.tsx and
+  // src/components/dashboard/blueprint-pending.tsx). Checking for a
+  // Blueprint here instead sent a user who'd already answered every
+  // onboarding question straight back through all of them again on their
+  // next login, any time generation hadn't succeeded yet.
+  if (membership?.organization.businessProfile) {
     redirect("/dashboard");
   }
 

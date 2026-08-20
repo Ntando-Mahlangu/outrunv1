@@ -19,6 +19,14 @@ import { parseJsonBody } from "@/lib/validate-request";
 const GENERIC_ERROR =
   "We couldn't complete that search right now. Please try again in a moment.";
 
+// The free OpenStreetMap provider's worst realistic case (see
+// src/lib/leads/osm-provider.ts's maxAttempts overrides) is a ~20s
+// geocoding retry plus a single ~30s Overpass attempt — comfortably under
+// this, but well past the Vercel default. Requires a plan that allows it;
+// on Hobby this is capped at 60s regardless (see the same note on
+// src/app/api/blueprint/generate/route.ts).
+export const maxDuration = 60;
+
 const searchProspectsSchema = z.object({
   query: z
     .string()
