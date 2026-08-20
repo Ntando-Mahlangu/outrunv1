@@ -29,6 +29,28 @@ const OVERPASS_URL = "https://overpass-api.de/api/interpreter";
 const USER_AGENT = "Outrun/1.0 (+https://outrunv1.online)";
 const RESULT_LIMIT = 60;
 
+// Overpass QL's own [timeout:N] tells the *server* how long it may spend
+// computing before giving up — it says nothing about how long our fetch
+// should wait for the response. Giving the client a SHORTER timeout than
+// the one baked into the query (as this used to do — 20s client vs. 25s
+// server) means a broad query that's genuinely still within its own
+// stated budget gets cut off by our side first, on every request that
+// takes the full budget rather than just the unlucky slow ones. Padding
+// the client timeout a few seconds past the server's own ceiling lets a
+// response that finishes within budget actually reach us.
+const OVERPASS_SERVER_TIMEOUT_SECONDS = 25;
+const OVERPASS_FETCH_TIMEOUT_MS = (OVERPASS_SERVER_TIMEOUT_SECONDS + 5) * 1000;
+
+// A broad, city-scale bounding box (Nominatim returns the full
+// administrative boundary for a query like "Chicago" — often 30km+
+// across) times an untagged generic fallback query (every shop/office/
+// craft plus 14 amenity values, each doubled for node+way) is the
+// slowest realistic case Overpass's shared public instance sees from
+// this app — exactly what timed out in production. Clamping the box to
+// a fixed span keeps that worst case tractable without needing a
+// specific business-type tag to narrow it down.
+const MAX_BBOX_SPAN_DEGREES = 0.3; // ~33km at the equator, less at higher latitudes
+
 type NominatimResult = {
   // jsonv2's own order: [south, north, west, east], each a string.
   boundingbox?: [string, string, string, string];
@@ -99,7 +121,27 @@ export function buildOverpassQuery(bbox: string, tags: OsmTag[]): string {
           ]),
         ];
 
-  return `[out:json][timeout:25];\n(\n${clauses.join("\n")}\n);\nout center ${RESULT_LIMIT};`;
+  return `[out:json][timeout:${OVERPASS_SERVER_TIMEOUT_SECONDS}];\n(\n${clauses.join("\n")}\n);\nout center ${RESULT_LIMIT};`;
+}
+
+/** Exported for testing — pure. Shrinks a bounding box symmetrically
+ * around its center down to MAX_BBOX_SPAN_DEGREES on each axis, leaving
+ * it untouched if it's already smaller. */
+export function clampBboxSpan(
+  south: number,
+  west: number,
+  north: number,
+  east: number,
+): [south: number, west: number, north: number, east: number] {
+  const clampAxis = (min: number, max: number): [number, number] => {
+    const span = max - min;
+    if (span <= MAX_BBOX_SPAN_DEGREES) return [min, max];
+    const center = (min + max) / 2;
+    return [center - MAX_BBOX_SPAN_DEGREES / 2, center + MAX_BBOX_SPAN_DEGREES / 2];
+  };
+  const [clampedSouth, clampedNorth] = clampAxis(south, north);
+  const [clampedWest, clampedEast] = clampAxis(west, east);
+  return [clampedSouth, clampedWest, clampedNorth, clampedEast];
 }
 
 export class OsmPlacesProvider implements CompanyDataProvider {
@@ -109,25 +151,39 @@ export class OsmPlacesProvider implements CompanyDataProvider {
     url.searchParams.set("format", "jsonv2");
     url.searchParams.set("limit", "1");
 
-    const results = await withRetry(async () => {
-      const response = await fetch(url, {
-        headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
-        signal: AbortSignal.timeout(10_000),
-      });
+    const results = await withRetry(
+      async () => {
+        const response = await fetch(url, {
+          headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
+          signal: AbortSignal.timeout(10_000),
+        });
 
-      if (!response.ok) {
-        const body = await response.text();
-        throw new HttpError(`OpenStreetMap geocoding failed: ${response.status} ${body}`, response.status);
-      }
+        if (!response.ok) {
+          const body = await response.text();
+          throw new HttpError(`OpenStreetMap geocoding failed: ${response.status} ${body}`, response.status);
+        }
 
-      return (await response.json()) as NominatimResult[];
-    });
+        return (await response.json()) as NominatimResult[];
+      },
+      // withRetry's own default (3 attempts) plus this call's 10s timeout
+      // would be fine alone, but combined with the Overpass call right
+      // after it, the two need to fit inside one synchronous request the
+      // user is actively waiting on — see the maxAttempts override there
+      // for the full budget accounting.
+      { maxAttempts: 2 },
+    );
 
     const box = results[0]?.boundingbox;
     if (!box) return null;
 
-    const [south, north, west, east] = box;
-    return `${south},${west},${north},${east}`;
+    const [south, north, west, east] = box.map(Number) as [number, number, number, number];
+    const [clampedSouth, clampedWest, clampedNorth, clampedEast] = clampBboxSpan(
+      south,
+      west,
+      north,
+      east,
+    );
+    return `${clampedSouth},${clampedWest},${clampedNorth},${clampedEast}`;
   }
 
   async search(query: CompanySearchQuery): Promise<RawCompanyResult[]> {
@@ -141,24 +197,37 @@ export class OsmPlacesProvider implements CompanyDataProvider {
 
     const overpassQuery = buildOverpassQuery(bbox, query.osmTags);
 
-    const data = await withRetry(async () => {
-      const response = await fetch(OVERPASS_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "User-Agent": USER_AGENT,
-        },
-        body: `data=${encodeURIComponent(overpassQuery)}`,
-        signal: AbortSignal.timeout(20_000),
-      });
+    const data = await withRetry(
+      async () => {
+        const response = await fetch(OVERPASS_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": USER_AGENT,
+          },
+          body: `data=${encodeURIComponent(overpassQuery)}`,
+          signal: AbortSignal.timeout(OVERPASS_FETCH_TIMEOUT_MS),
+        });
 
-      if (!response.ok) {
-        const body = await response.text();
-        throw new HttpError(`Overpass search failed: ${response.status} ${body}`, response.status);
-      }
+        if (!response.ok) {
+          const body = await response.text();
+          throw new HttpError(`Overpass search failed: ${response.status} ${body}`, response.status);
+        }
 
-      return (await response.json()) as OverpassResponse;
-    });
+        return (await response.json()) as OverpassResponse;
+      },
+      // No retry here: a single attempt can already legitimately take up
+      // to OVERPASS_FETCH_TIMEOUT_MS (30s), and this is a synchronous
+      // request a real user is actively waiting on — a second full
+      // attempt would risk the whole route outliving Vercel's own
+      // function-duration ceiling (see maxDuration below) as well as the
+      // user's patience. A query that timed out once at its own
+      // server-side budget is also unlikely to finish meaningfully
+      // faster on an immediate retry of the identical query, unlike the
+      // quick geocoding lookup above (which does still retry). A
+      // transient failure here just means the user clicks Search again.
+      { maxAttempts: 1 },
+    );
 
     const seen = new Set<string>();
     const results: RawCompanyResult[] = [];
