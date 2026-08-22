@@ -368,13 +368,21 @@ model Company {
 
   isSaved Boolean @default(false)
 
+  // Lead ownership (docs/outrun/12 team collaboration) — which teammate is
+  // working this prospect. A bare user id, not a Prisma relation, matching
+  // the same loose-reference pattern already used for Task.ownerUserId and
+  // AuditLog.actorUserId elsewhere in this schema.
+  assignedToUserId String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   outreachMessages OutreachMessage[]
   leadListEntries  LeadListCompany[]
   contacts         Contact[]
+  callLogs         CallLog[]
 
+  @@index([organizationId, assignedToUserId])
   @@unique([organizationId, source, sourceId])
   @@map("company")
 }
@@ -621,6 +629,7 @@ enum EventType {
   OUTREACH_SENT
   FOLLOW_UP_SEQUENCE_GENERATED
   CALL_SCRIPT_GENERATED
+  CALL_LOGGED
   LEAD_LIST_CREATED
   REFUND_REQUESTED
   TASK_COMPLETED
@@ -1130,6 +1139,45 @@ model Contact {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  callLogs CallLog[]
+
   @@index([companyId])
   @@map("contact")
+}
+
+// docs/outrun/07 "COLD CALL SCRIPT" — the disposition side of a cold call:
+// what actually happened when someone dialed the number, not just the
+// script they were given. companyId is required (every call is against a
+// prospected company) while contactId is optional (many companies have no
+// named Contact yet, just a business phone number). loggedByName is a
+// snapshot of who made the call, same pattern as RefundRequest.requestedByName,
+// so a member's call history still reads correctly after they leave the org.
+enum CallOutcome {
+  ANSWERED
+  VOICEMAIL
+  NO_ANSWER
+  CALLBACK_REQUESTED
+  NOT_INTERESTED
+  WRONG_NUMBER
+  DO_NOT_CALL
+}
+
+model CallLog {
+  id String @id @default(uuid())
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  contactId String?
+  contact   Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  loggedByUserId String
+  loggedByName   String
+  outcome        CallOutcome
+  notes          String?
+
+  createdAt DateTime @default(now())
+
+  @@index([companyId, createdAt])
+  @@map("call_log")
 }
