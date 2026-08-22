@@ -122,7 +122,14 @@ export function ContactsPanel({
                   )}
                 </p>
                 <p className="text-xs text-[var(--color-text-secondary)]">
-                  {[contact.email, contact.phone].filter(Boolean).join(" · ") || "No contact details"}
+                  {contact.email}
+                  {contact.email && contact.phone ? " · " : ""}
+                  {contact.phone && (
+                    <a href={`tel:${contact.phone}`} className="text-[var(--color-accent-text)] hover:underline">
+                      {contact.phone}
+                    </a>
+                  )}
+                  {!contact.email && !contact.phone && "No contact details"}
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-2">

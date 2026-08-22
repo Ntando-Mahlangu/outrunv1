@@ -1,6 +1,7 @@
 import type { CompanyDataProvider, CompanySearchQuery, OsmTag, RawCompanyResult } from "./types";
 import { withRetry, HttpError } from "@/lib/resilience/retry";
 import { isValidOsmTag } from "./osm-tags";
+import { UserFacingError } from "@/lib/errors";
 
 // docs/outrun/06, docs/outrun/11 — the free lead-data option behind the
 // same CompanyDataProvider interface Google Places implements. No API key,
@@ -193,7 +194,18 @@ export class OsmPlacesProvider implements CompanyDataProvider {
     if (!query.location.trim()) return [];
 
     const bbox = await this.geocodeBoundingBox(query.location);
-    if (!bbox) return [];
+    if (!bbox) {
+      // Distinct from "found the area, nothing tagged there" (a genuine
+      // empty result) — Nominatim couldn't resolve this location string
+      // to a place AT ALL, most often a misspelling the AI query parser
+      // didn't catch (e.g. "Los Angels"). Silently returning [] here made
+      // that read identically to "no matching businesses," which sends
+      // the user chasing a data-coverage problem that isn't the actual
+      // issue — the search never even reached the business lookup.
+      throw new UserFacingError(
+        `We couldn't find "${query.location}" as a location. Check the spelling, or try a nearby larger city.`,
+      );
+    }
 
     const overpassQuery = buildOverpassQuery(bbox, query.osmTags);
 

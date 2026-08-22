@@ -11,7 +11,9 @@ import { ResearchPanel } from "@/components/prospects/research-panel";
 import { OutreachPanel } from "@/components/prospects/outreach-panel";
 import { CallScriptPanel } from "@/components/prospects/call-script-panel";
 import { AddToListMenu } from "@/components/prospects/add-to-list-menu";
+import { AssignMenu } from "@/components/prospects/assign-menu";
 import { ContactsPanel } from "@/components/prospects/contacts-panel";
+import { CallLogPanel } from "@/components/prospects/call-log-panel";
 import type { CompanyResearchData } from "@/lib/prospects/research-schema";
 import type { CallScriptData } from "@/lib/prospects/call-script-schema";
 import { SplitHeading } from "@/components/motion/split-heading";
@@ -31,10 +33,22 @@ export default async function ProspectDetailPage({
   const company = await companyRepository.findByIdForOrgWithMessages(organization.id, id);
   if (!company) notFound();
 
-  const contacts = await prisma.contact.findMany({
-    where: { companyId: id },
-    orderBy: { createdAt: "asc" },
-  });
+  const [contacts, callLogs, members] = await Promise.all([
+    prisma.contact.findMany({
+      where: { companyId: id },
+      orderBy: { createdAt: "asc" },
+    }),
+    prisma.callLog.findMany({
+      where: { companyId: id },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.membership.findMany({
+      where: { organizationId: organization.id },
+      include: { user: { select: { id: true, name: true } } },
+      orderBy: { createdAt: "asc" },
+    }),
+  ]);
+  const memberOptions = members.map((m) => ({ userId: m.user.id, name: m.user.name }));
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -49,7 +63,14 @@ export default async function ProspectDetailPage({
             text={company.name}
             className="text-2xl font-light tracking-tight text-[var(--color-text-primary)]"
           />
-          <AddToListMenu companyId={company.id} />
+          <div className="flex items-center gap-2">
+            <AssignMenu
+              companyId={company.id}
+              members={memberOptions}
+              initialAssignedToUserId={company.assignedToUserId}
+            />
+            <AddToListMenu companyId={company.id} />
+          </div>
         </div>
         <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
           {company.category ?? "Uncategorized"}
@@ -120,6 +141,11 @@ export default async function ProspectDetailPage({
           hasResearch={Boolean(company.research)}
           initialCallScript={company.callScript as CallScriptData | null}
         />
+      </Card>
+
+      <Card>
+        <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">Call Outcomes</h2>
+        <CallLogPanel companyId={company.id} contacts={contacts} initialCallLogs={callLogs} />
       </Card>
     </div>
   );

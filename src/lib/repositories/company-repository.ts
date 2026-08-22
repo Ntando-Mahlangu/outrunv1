@@ -100,6 +100,10 @@ export function setSaved(id: string, isSaved: boolean) {
   return prisma.company.update({ where: { id }, data: { isSaved } });
 }
 
+export function setAssignedTo(id: string, assignedToUserId: string | null) {
+  return prisma.company.update({ where: { id }, data: { assignedToUserId } });
+}
+
 export function upsertFromSearchResult(
   organizationId: string,
   result: RawCompanyResult,

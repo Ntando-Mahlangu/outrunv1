@@ -11,6 +11,7 @@ export const EVENT_LABELS: Record<EventType, string> = {
   OUTREACH_SENT: "Outreach Sent",
   FOLLOW_UP_SEQUENCE_GENERATED: "Follow-Up",
   CALL_SCRIPT_GENERATED: "Call Script",
+  CALL_LOGGED: "Call Logged",
   LEAD_LIST_CREATED: "Lead List",
   REFUND_REQUESTED: "Billing",
   CAMPAIGN_CREATED: "Campaign",
