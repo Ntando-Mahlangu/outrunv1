@@ -44,6 +44,7 @@ export const RATE_LIMITS = {
   AI: { limit: 20, windowSeconds: 60 },
   SEARCH: { limit: 20, windowSeconds: 60 },
   EXPORT: { limit: 10, windowSeconds: 60 },
+  IMPORT: { limit: 10, windowSeconds: 60 },
   WEBHOOK: { limit: 30, windowSeconds: 60 },
   // docs/outrun/14 "API Access (Limited)" — the limit is the point, not an
   // afterthought, so it's tighter than the in-app SEARCH limit even though
