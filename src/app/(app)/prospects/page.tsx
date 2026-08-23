@@ -20,7 +20,7 @@ import { Magnetic } from "@/components/motion/magnetic";
 type Interpretation = {
   searchedFor: string;
   unsupportedIntents: string[];
-  provider: "google_places" | "openstreetmap";
+  provider: "google_places" | "yelp" | "openstreetmap";
 };
 
 export default function ProspectsPage() {
@@ -144,10 +144,20 @@ export default function ProspectsPage() {
               You&apos;re on the free OpenStreetMap data source — its coverage comes entirely from
               community mapping, so results depend on how thoroughly businesses in this area have
               actually been mapped, and can be patchy outside well-mapped cities. A broader
-              category or a bigger nearby city sometimes turns up more; connecting a Google Places
-              API key to your Outrun deployment is the reliable fix for consistently dense results
-              — ask whoever manages your Outrun hosting to set{" "}
+              category or a bigger nearby city sometimes turns up more; connecting a Yelp or
+              Google Places API key to your Outrun deployment is the reliable fix for consistently
+              dense results — ask whoever manages your Outrun hosting to set{" "}
+              <code className="text-[var(--color-text-secondary)]">YELP_API_KEY</code> or{" "}
               <code className="text-[var(--color-text-secondary)]">GOOGLE_PLACES_API_KEY</code>.
+            </p>
+          )}
+          {interpretation?.provider === "yelp" && (
+            <p>
+              You&apos;re on the free Yelp data source — a broader category or a bigger nearby
+              city sometimes turns up more. Yelp&apos;s coverage also skews toward
+              consumer-facing, reviewable businesses (restaurants, salons, home services) rather
+              than B2B categories like law firms or agencies, and it never returns a business&apos;s
+              own website, so website-based filters won&apos;t be reliable here.
             </p>
           )}
         </div>
