@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getCurrentSession } from "@/lib/session";
 import { getCurrentOrganization } from "@/lib/org";
 import { isEmailSendingConfigured } from "@/lib/email";
+import { isSafeHttpUrl } from "@/lib/security/safe-url";
 import { prisma } from "@/lib/prisma";
 import * as companyRepository from "@/lib/repositories/company-repository";
 import { Card } from "@/components/ui/card";
@@ -77,7 +78,7 @@ export default async function ProspectDetailPage({
           {company.formattedAddress ? ` · ${company.formattedAddress}` : ""}
         </p>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          {company.website && (
+          {company.website && isSafeHttpUrl(company.website) && (
             <a
               href={company.website}
               target="_blank"

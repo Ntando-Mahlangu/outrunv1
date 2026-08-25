@@ -17,13 +17,28 @@ const COLUMNS: { header: string; value: (c: Company) => string }[] = [
   { header: "Added", value: (c) => c.createdAt.toISOString() },
 ];
 
+// CSV/formula injection (CWE-1236) mitigation — a field beginning with =,
+// +, -, @, or a tab is a live formula the moment this file is opened in
+// Excel/Sheets/LibreOffice. Applied here at export, not at write time, so
+// the app's own UI never shows a mutated value for a legitimate name that
+// happens to start with one of these characters (e.g. "-Automotive
+// Repair") — it only matters once data leaves the app as a spreadsheet
+// file, and every column goes through this, not just ones a specific
+// write path (like CSV import) happens to touch.
+const FORMULA_TRIGGER_CHARS = new Set(["=", "+", "-", "@", "\t"]);
+
+function neutralizeFormulaPrefix(value: string): string {
+  return value.length > 0 && FORMULA_TRIGGER_CHARS.has(value[0]!) ? `'${value}` : value;
+}
+
 // RFC 4180 — quote any field containing a comma, quote, or newline;
 // double up embedded quotes.
 function escapeCsvField(value: string): string {
-  if (/[",\n\r]/.test(value)) {
-    return `"${value.replace(/"/g, '""')}"`;
+  const safe = neutralizeFormulaPrefix(value);
+  if (/[",\n\r]/.test(safe)) {
+    return `"${safe.replace(/"/g, '""')}"`;
   }
-  return value;
+  return safe;
 }
 
 export function companiesToCsv(companies: Company[]): string {

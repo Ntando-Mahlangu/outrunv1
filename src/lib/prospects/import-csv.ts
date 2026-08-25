@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { RawCompanyResult } from "@/lib/leads/types";
+import { isSafeHttpUrl } from "@/lib/security/safe-url";
 
 // docs/outrun/06 "LEAD DATA PROVIDERS" — a manual side door into the same
 // pipeline every CompanyDataProvider feeds (scoreCompany, upsertFromSearchResult).
@@ -157,7 +158,7 @@ export function parseCompaniesCsv(text: string): ImportCsvResult {
       sourceId: sourceIdFor(name, phone, formattedAddress),
       name,
       category: values.category || null,
-      website: values.website || null,
+      website: values.website && isSafeHttpUrl(values.website) ? values.website : null,
       phone,
       formattedAddress,
       rating: rating != null && rating >= 0 && rating <= 5 ? rating : null,

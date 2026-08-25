@@ -61,4 +61,27 @@ describe("companiesToCsv", () => {
     const csv = companiesToCsv([]);
     expect(csv.split("\r\n")).toHaveLength(1);
   });
+
+  it("neutralizes a leading formula-trigger character with a single quote", () => {
+    const csv = companiesToCsv([
+      company({ name: '=HYPERLINK("https://evil.example","Open")' }),
+    ]);
+    // The field also contains quotes, so RFC 4180 quoting wraps it and
+    // doubles the embedded quotes — the neutralization prefix survives that
+    // untouched since it appears before any quote character in the field.
+    expect(csv).toContain("'=HYPERLINK(");
+  });
+
+  it("neutralizes every formula-trigger character, not just =", () => {
+    for (const char of ["+", "-", "@", "\t"]) {
+      const csv = companiesToCsv([company({ category: `${char}cmd|'/c calc'!A1` })]);
+      expect(csv).toContain(`'${char}cmd`);
+    }
+  });
+
+  it("leaves a field starting with an ordinary character untouched", () => {
+    const csv = companiesToCsv([company({ name: "Automotive Repair" })]);
+    expect(csv).toContain("Automotive Repair");
+    expect(csv).not.toContain("'Automotive");
+  });
 });

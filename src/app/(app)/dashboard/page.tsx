@@ -26,7 +26,7 @@ import { RightSidebar } from "@/components/dashboard/right-sidebar";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { RevealGroup, RevealItem } from "@/components/motion/reveal";
-import { SplitHeading } from "@/components/motion/split-heading";
+import { GreetingHeading } from "@/components/dashboard/greeting-heading";
 import { Magnetic } from "@/components/motion/magnetic";
 import { CountUp } from "@/components/motion/count-up";
 import { GenerativeLattice } from "@/components/motion/backgrounds";
@@ -116,7 +116,7 @@ export default async function DashboardPage() {
   ]);
   const healthTrendLabel = health ? formatTrend(health.overallTrend) : null;
 
-  const firstName = session.user.name.split(" ")[0];
+  const firstName = session.user.name.split(" ")[0] ?? session.user.name;
   const today = new Date();
 
   const topSignal = risks[0] ?? null;
@@ -143,12 +143,7 @@ export default async function DashboardPage() {
       <div className="relative flex gap-8">
       <RevealGroup className="min-w-0 flex-1 space-y-8" stagger={0.1}>
         <RevealItem>
-          <SplitHeading
-            as="h1"
-            text={`${greeting(today)}, ${firstName}.`}
-            wordClassName={(i) => (i === 2 ? "text-gradient-signature" : "")}
-            className="text-2xl font-light tracking-tight text-[var(--color-text-primary)]"
-          />
+          <GreetingHeading greeting={greeting(today)} firstName={firstName} />
           <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
             Here&apos;s what will help {organization.name} grow today · {today.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
           </p>
