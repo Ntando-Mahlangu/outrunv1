@@ -7,6 +7,7 @@ import { SignOutButton } from "@/components/sign-out-button";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { SignupConversion } from "@/components/analytics/signup-conversion";
+import { TermsAcceptanceRecorder } from "@/components/legal/terms-acceptance-recorder";
 
 export default async function WelcomePage() {
   const session = await getCurrentSession();
@@ -37,6 +38,7 @@ export default async function WelcomePage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-[var(--color-bg-primary)] px-4 py-16">
       <SignupConversion userId={session.user.id} />
+      <TermsAcceptanceRecorder userId={session.user.id} />
       <Card className="w-full max-w-lg animate-fade-in">
         <CardHeader>
           <CardTitle>Welcome, {firstName}.</CardTitle>

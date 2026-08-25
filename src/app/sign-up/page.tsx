@@ -25,6 +25,7 @@ export default function SignUpPage() {
   const [googleEnabled, setGoogleEnabled] = useState(false);
   const [microsoftEnabled, setMicrosoftEnabled] = useState(false);
   const [useMagicLink, setUseMagicLink] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/config")
@@ -41,6 +42,10 @@ export default function SignUpPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!agreedToTerms) {
+      setError("Please agree to the Terms of Service and Privacy Policy to continue.");
+      return;
+    }
     setError(null);
     setIsSubmitting(true);
 
@@ -83,8 +88,28 @@ export default function SignUpPage() {
           <CardDescription>It only takes a few minutes.</CardDescription>
         </CardHeader>
 
+        <label className="mb-4 flex items-start gap-2 text-xs text-[var(--color-text-secondary)]">
+          <input
+            type="checkbox"
+            checked={agreedToTerms}
+            onChange={(e) => setAgreedToTerms(e.target.checked)}
+            className="mt-0.5 size-3.5 shrink-0 accent-[var(--color-accent)]"
+          />
+          <span>
+            I agree to the{" "}
+            <Link href="/terms" target="_blank" className="text-[var(--color-accent-text)] underline">
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" target="_blank" className="text-[var(--color-accent-text)] underline">
+              Privacy Policy
+            </Link>
+            .
+          </span>
+        </label>
+
         {useMagicLink ? (
-          <MagicLinkPanel initialEmail={email} />
+          <MagicLinkPanel initialEmail={email} disabled={!agreedToTerms} />
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <FormError message={error} />
@@ -136,7 +161,7 @@ export default function SignUpPage() {
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <Button type="submit" className="w-full" disabled={isSubmitting || !agreedToTerms}>
               {isSubmitting ? "Creating your account…" : "Continue"}
             </Button>
           </form>
@@ -164,6 +189,7 @@ export default function SignUpPage() {
                   type="button"
                   variant="secondary"
                   className="w-full"
+                  disabled={!agreedToTerms}
                   onClick={handleGoogle}
                 >
                   <GoogleIcon className="size-4" />
@@ -175,6 +201,7 @@ export default function SignUpPage() {
                   type="button"
                   variant="secondary"
                   className="w-full"
+                  disabled={!agreedToTerms}
                   onClick={handleMicrosoft}
                 >
                   <MicrosoftIcon className="size-4" />
