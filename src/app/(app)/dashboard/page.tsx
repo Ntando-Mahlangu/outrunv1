@@ -9,6 +9,8 @@ import { getBusinessHealth, type HealthCategory } from "@/lib/growth-partner/hea
 import { getBiggestWinThisWeek } from "@/lib/growth-partner/weekly-win";
 import { getRisksAndOpportunities } from "@/lib/growth-partner/risks";
 import { getBusinessSnapshot } from "@/lib/dashboard/business-snapshot";
+import { getGoalsTasksSummary } from "@/lib/dashboard/goals-tasks-summary";
+import { getInFlightBlueprintJob, getRecentFailedBlueprintJob } from "@/lib/dashboard/blueprint-job-status";
 import { getCampaignOverview } from "@/lib/dashboard/campaign-overview";
 import { getGrowthStreaks } from "@/lib/dashboard/streaks";
 import { getUpcomingTasks, getRecentNotifications } from "@/lib/dashboard/right-sidebar-data";
@@ -61,17 +63,8 @@ export default async function DashboardPage() {
   const blueprint = await findLatestForOrg(organization.id);
   if (!blueprint) {
     const [inFlightJob, lastFailedJob] = await Promise.all([
-      prisma.job.findFirst({
-        where: {
-          organizationId: organization.id,
-          type: "BLUEPRINT_GENERATION",
-          status: { in: ["PENDING", "RUNNING"] },
-        },
-      }),
-      prisma.job.findFirst({
-        where: { organizationId: organization.id, type: "BLUEPRINT_GENERATION", status: "FAILED" },
-        orderBy: { createdAt: "desc" },
-      }),
+      getInFlightBlueprintJob(organization.id),
+      getRecentFailedBlueprintJob(organization.id),
     ]);
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
@@ -94,6 +87,7 @@ export default async function DashboardPage() {
     biggestWin,
     risks,
     snapshot,
+    goalsTasksSummary,
     campaignOverview,
     streaks,
     upcomingTasks,
@@ -104,6 +98,7 @@ export default async function DashboardPage() {
     getBiggestWinThisWeek(organization.id),
     getRisksAndOpportunities(organization.id),
     getBusinessSnapshot(organization.id),
+    getGoalsTasksSummary(organization.id),
     getCampaignOverview(organization.id),
     getGrowthStreaks(organization.id),
     getUpcomingTasks(organization.id, 5),
@@ -357,6 +352,72 @@ export default async function DashboardPage() {
                 Plan
               </p>
               <p className="text-sm text-[var(--color-text-primary)]">{organization.planTier}</p>
+            </div>
+          </div>
+        </Card>
+        </RevealItem>
+
+        <RevealItem>
+        <Card>
+          <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
+            Goals &amp; Tasks
+          </h2>
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div>
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-[var(--color-text-primary)]">Goals</p>
+                <Link href="/goals" className="text-xs text-[var(--color-accent-text)] hover:underline">
+                  View all →
+                </Link>
+              </div>
+              {goalsTasksSummary.goals.total === 0 ? (
+                <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+                  No goals set yet — add one to track progress here.
+                </p>
+              ) : (
+                <>
+                  <p className="mt-2 text-2xl font-light text-[var(--color-text-primary)]">
+                    {goalsTasksSummary.goals.completed}
+                    <span className="text-base text-[var(--color-text-muted)]">
+                      {" "}
+                      / {goalsTasksSummary.goals.total} completed
+                    </span>
+                  </p>
+                  <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+                    {goalsTasksSummary.goals.active} active
+                    {goalsTasksSummary.goals.abandoned > 0 &&
+                      ` · ${goalsTasksSummary.goals.abandoned} abandoned`}
+                  </p>
+                </>
+              )}
+            </div>
+            <div>
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-[var(--color-text-primary)]">Growth Tasks</p>
+                <Link href="/tasks" className="text-xs text-[var(--color-accent-text)] hover:underline">
+                  View all →
+                </Link>
+              </div>
+              {goalsTasksSummary.tasks.total === 0 ? (
+                <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+                  No tasks yet — they&apos;re generated from your Growth Blueprint.
+                </p>
+              ) : (
+                <>
+                  <p className="mt-2 text-2xl font-light text-[var(--color-text-primary)]">
+                    {goalsTasksSummary.tasks.completed}
+                    <span className="text-base text-[var(--color-text-muted)]">
+                      {" "}
+                      / {goalsTasksSummary.tasks.total} completed
+                    </span>
+                  </p>
+                  <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+                    {goalsTasksSummary.tasks.pending} pending
+                    {goalsTasksSummary.tasks.dismissed > 0 &&
+                      ` · ${goalsTasksSummary.tasks.dismissed} dismissed`}
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </Card>
