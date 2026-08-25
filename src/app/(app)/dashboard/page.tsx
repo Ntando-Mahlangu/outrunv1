@@ -43,15 +43,17 @@ function greeting(date: Date) {
   return "Good Evening";
 }
 
-const QUICK_ACTIONS = [
-  { href: "/prospects", label: "Find Companies" },
-  { href: "/campaigns/new", label: "Launch Campaign" },
-  { href: "/seo", label: "Analyse Website" },
-  { href: "/growth-partner/reviews", label: "Run Weekly Review" },
-  { href: "/blueprint", label: "Update Growth Blueprint" },
-  { href: "/tasks", label: "Growth Tasks" },
-  { href: "/goals", label: "Goals" },
-];
+function quickActions(hasBlueprint: boolean) {
+  return [
+    { href: "/prospects", label: "Find Companies" },
+    { href: "/campaigns/new", label: "Launch Campaign" },
+    { href: "/seo", label: "Analyse Website" },
+    { href: "/growth-partner/reviews", label: "Run Weekly Review" },
+    { href: "/blueprint", label: hasBlueprint ? "Update Growth Blueprint" : "Generate Growth Blueprint" },
+    { href: "/tasks", label: "Growth Tasks" },
+    { href: "/goals", label: "Goals" },
+  ];
+}
 
 export default async function DashboardPage() {
   const session = await getCurrentSession();
@@ -61,26 +63,27 @@ export default async function DashboardPage() {
   if (!organization) redirect("/sign-in");
   if (!organization.businessProfile) redirect("/onboarding");
 
+  // docs/outrun/04 "Mission Control" — only the sections that genuinely
+  // depend on a Blueprint (Today's Priority, Growth Score, AI
+  // Opportunities) wait on one existing; everything else here (Goals &
+  // Tasks, Business Snapshot, Recent Activity, Quick Actions) is tracked
+  // independently of the Blueprint and has no reason to be hidden behind
+  // it. A brand-new org used to see nothing but a full-page "generate
+  // your Blueprint" wall — now that prompt is just one card, in the slot
+  // Today's Priority would otherwise occupy, and the rest of the
+  // dashboard is real from the first login.
   const blueprint = await findLatestForOrg(organization.id);
-  if (!blueprint) {
-    const [inFlightJob, lastFailedJob] = await Promise.all([
-      getInFlightBlueprintJob(organization.id),
-      getRecentFailedBlueprintJob(organization.id),
-    ]);
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="w-full max-w-md">
-          <BlueprintPending
-            hasInFlightJob={Boolean(inFlightJob)}
-            lastFailedError={lastFailedJob?.errorMessage}
-          />
-        </div>
-      </div>
-    );
-  }
+  const [inFlightJob, lastFailedJob] = blueprint
+    ? [null, null]
+    : await Promise.all([
+        getInFlightBlueprintJob(organization.id),
+        getRecentFailedBlueprintJob(organization.id),
+      ]);
 
-  const mission = getTodaysMission(blueprint);
-  const allOpportunities = blueprint.opportunities as GrowthBlueprintData["opportunities"];
+  const mission = blueprint ? getTodaysMission(blueprint) : null;
+  const allOpportunities = blueprint
+    ? (blueprint.opportunities as GrowthBlueprintData["opportunities"])
+    : [];
   const opportunities = allOpportunities.slice(0, 3);
 
   const [
@@ -147,6 +150,15 @@ export default async function DashboardPage() {
             </p>
           )}
         </RevealItem>
+
+        {!blueprint && (
+          <RevealItem>
+            <BlueprintPending
+              hasInFlightJob={Boolean(inFlightJob)}
+              lastFailedError={lastFailedJob?.errorMessage}
+            />
+          </RevealItem>
+        )}
 
         {mission && (
           <RevealItem>
@@ -233,51 +245,53 @@ export default async function DashboardPage() {
           </RevealItem>
         )}
 
-        <RevealItem className="grid gap-6 lg:grid-cols-[auto_1fr]">
-          <Card className="flex flex-col items-center justify-center">
-            <ScoreGauge score={blueprint.growthScore} label="Growth Score" />
-          </Card>
+        {blueprint && (
+          <RevealItem className="grid gap-6 lg:grid-cols-[auto_1fr]">
+            <Card className="flex flex-col items-center justify-center">
+              <ScoreGauge score={blueprint.growthScore} label="Growth Score" />
+            </Card>
 
-          <Card>
-            <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
-              Business Health Score
-            </h2>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {health?.categories.map((c) => {
-                const trendLabel = formatTrend(c.trend);
-                return (
-                  <div
-                    key={c.category}
-                    className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-3"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-sm font-medium text-[var(--color-text-primary)]">
-                        {c.category}
-                      </span>
-                      <span className="text-sm text-[var(--color-text-primary)]">
-                        {c.score}
-                        {trendLabel && (
-                          <span className="ml-1 text-xs text-[var(--color-text-muted)]">
-                            ({trendLabel})
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-xs text-[var(--color-text-secondary)]">{c.status}</p>
-                    {c.mainIssue && (
-                      <p className="mt-1 text-xs text-[var(--color-warning)]">
-                        Main issue: {c.mainIssue}
+            <Card>
+              <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
+                Business Health Score
+              </h2>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {health?.categories.map((c) => {
+                  const trendLabel = formatTrend(c.trend);
+                  return (
+                    <div
+                      key={c.category}
+                      className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-3"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                          {c.category}
+                        </span>
+                        <span className="text-sm text-[var(--color-text-primary)]">
+                          {c.score}
+                          {trendLabel && (
+                            <span className="ml-1 text-xs text-[var(--color-text-muted)]">
+                              ({trendLabel})
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-[var(--color-text-secondary)]">{c.status}</p>
+                      {c.mainIssue && (
+                        <p className="mt-1 text-xs text-[var(--color-warning)]">
+                          Main issue: {c.mainIssue}
+                        </p>
+                      )}
+                      <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+                        Fastest improvement: {c.fastestImprovement}
                       </p>
-                    )}
-                    <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-                      Fastest improvement: {c.fastestImprovement}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
-        </RevealItem>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+          </RevealItem>
+        )}
 
         <RevealItem>
         <Card>
@@ -470,37 +484,39 @@ export default async function DashboardPage() {
         </Card>
         </RevealItem>
 
-        <RevealItem>
-        <Card>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-medium text-[var(--color-text-primary)]">
-              AI Opportunities
-            </h2>
-            <Link
-              href="/blueprint"
-              className="text-sm text-[var(--color-accent-text)] hover:underline"
-            >
-              View all
-            </Link>
-          </div>
-          <ul className="space-y-4">
-            {opportunities.map((o) => (
-              <li
-                key={o.title}
-                className="border-b border-[var(--color-border)] pb-4 last:border-0 last:pb-0"
+        {blueprint && (
+          <RevealItem>
+          <Card>
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-medium text-[var(--color-text-primary)]">
+                AI Opportunities
+              </h2>
+              <Link
+                href="/blueprint"
+                className="text-sm text-[var(--color-accent-text)] hover:underline"
               >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="font-medium text-[var(--color-text-primary)]">{o.title}</p>
-                  <ImpactBadge level={o.priority} label={`${o.priority} priority`} />
-                </div>
-                <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-                  {o.description}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </Card>
-        </RevealItem>
+                View all
+              </Link>
+            </div>
+            <ul className="space-y-4">
+              {opportunities.map((o) => (
+                <li
+                  key={o.title}
+                  className="border-b border-[var(--color-border)] pb-4 last:border-0 last:pb-0"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-medium text-[var(--color-text-primary)]">{o.title}</p>
+                    <ImpactBadge level={o.priority} label={`${o.priority} priority`} />
+                  </div>
+                  <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                    {o.description}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </Card>
+          </RevealItem>
+        )}
 
         <RevealItem>
           <CampaignOverviewWidget overview={campaignOverview} />
@@ -546,7 +562,7 @@ export default async function DashboardPage() {
             Quick Actions
           </h2>
           <div className="flex flex-wrap gap-3">
-            {QUICK_ACTIONS.map((action) => (
+            {quickActions(Boolean(blueprint)).map((action) => (
               <Link
                 key={action.href}
                 href={action.href}
