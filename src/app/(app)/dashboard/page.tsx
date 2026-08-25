@@ -29,6 +29,7 @@ import { RevealGroup, RevealItem } from "@/components/motion/reveal";
 import { SplitHeading } from "@/components/motion/split-heading";
 import { Magnetic } from "@/components/motion/magnetic";
 import { CountUp } from "@/components/motion/count-up";
+import { GenerativeLattice } from "@/components/motion/backgrounds";
 import type { GrowthBlueprintData } from "@/lib/growth-blueprint/schema";
 
 function formatTrend(trend: number | null): string | null {
@@ -131,13 +132,21 @@ export default async function DashboardPage() {
     ? { category: lowestHealthCategory.category, tip: lowestHealthCategory.fastestImprovement }
     : null;
 
+  // docs/outrun/01 "signature background" — a single, subtle nod to the
+  // generative/computational design language on the one screen users see
+  // every day (WOW #3), not a decoration bolted onto every page. Same
+  // opacity-25 the component always ships at; never stacked with an extra
+  // opacity utility, which would compound and wash it out to nothing.
   return (
-    <div className="flex gap-8">
+    <div className="relative">
+      <GenerativeLattice />
+      <div className="relative flex gap-8">
       <RevealGroup className="min-w-0 flex-1 space-y-8" stagger={0.1}>
         <RevealItem>
           <SplitHeading
             as="h1"
             text={`${greeting(today)}, ${firstName}.`}
+            wordClassName={(i) => (i === 2 ? "text-gradient-signature" : "")}
             className="text-2xl font-light tracking-tight text-[var(--color-text-primary)]"
           />
           <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
@@ -199,7 +208,7 @@ export default async function DashboardPage() {
                   <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
                     Business Health
                   </p>
-                  <p className="text-sm text-[var(--color-text-primary)]">
+                  <p className="text-2xl font-light text-[var(--color-text-primary)]">
                     <CountUp value={health.overall} suffix="/100" />
                     {healthTrendLabel && (
                       <span className="ml-1 text-xs text-[var(--color-text-muted)]">
@@ -213,13 +222,17 @@ export default async function DashboardPage() {
                 <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
                   New Opportunities
                 </p>
-                <p className="text-sm text-[var(--color-text-primary)]">{allOpportunities.length}</p>
+                <p className="text-2xl font-light text-[var(--color-text-primary)]">
+                  <CountUp value={allOpportunities.length} />
+                </p>
               </div>
               <div>
                 <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
                   Potential Risks
                 </p>
-                <p className="text-sm text-[var(--color-text-primary)]">{risks.length}</p>
+                <p className="text-2xl font-light text-[var(--color-text-primary)]">
+                  <CountUp value={risks.length} />
+                </p>
               </div>
               <div>
                 <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
@@ -313,7 +326,9 @@ export default async function DashboardPage() {
               <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
                 Campaigns Running
               </p>
-              <p className="text-sm text-[var(--color-text-primary)]">{snapshot.campaignsRunning}</p>
+              <p className="text-2xl font-light text-[var(--color-text-primary)]">
+                <CountUp value={snapshot.campaignsRunning} />
+              </p>
             </div>
             <div>
               <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
@@ -325,21 +340,29 @@ export default async function DashboardPage() {
               <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
                 Reply Rate
               </p>
-              <p className="text-sm text-[var(--color-text-primary)]">
-                {snapshot.replyRate != null ? `${snapshot.replyRate}%` : "No outreach sent yet"}
-              </p>
+              {snapshot.replyRate != null ? (
+                <p className="text-2xl font-light text-[var(--color-text-primary)]">
+                  <CountUp value={snapshot.replyRate} suffix="%" />
+                </p>
+              ) : (
+                <p className="text-sm text-[var(--color-text-muted)]">No outreach sent yet</p>
+              )}
             </div>
             <div>
               <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
                 Positive Replies
               </p>
-              <p className="text-sm text-[var(--color-text-primary)]">{snapshot.positiveReplies}</p>
+              <p className="text-2xl font-light text-[var(--color-text-primary)]">
+                <CountUp value={snapshot.positiveReplies} />
+              </p>
             </div>
             <div>
               <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
                 Customers Won
               </p>
-              <p className="text-sm text-[var(--color-text-primary)]">{snapshot.customersWon}</p>
+              <p className="text-2xl font-light text-[var(--color-text-primary)]">
+                <CountUp value={snapshot.customersWon} />
+              </p>
             </div>
             <div>
               <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
@@ -347,7 +370,7 @@ export default async function DashboardPage() {
               </p>
               {snapshot.pipelineValue ? (
                 <>
-                  <p className="text-sm text-[var(--color-text-primary)]">
+                  <p className="text-2xl font-light text-[var(--color-text-primary)]">
                     <CountUp value={snapshot.pipelineValue.estimate} prefix="$" />
                   </p>
                   <p className="text-xs text-[var(--color-text-muted)]">
@@ -582,6 +605,7 @@ export default async function DashboardPage() {
         notifications={notifications}
         upcomingTasks={upcomingTasks}
       />
+      </div>
     </div>
   );
 }

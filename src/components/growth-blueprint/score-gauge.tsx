@@ -18,7 +18,15 @@ export function ScoreGauge({ score, label }: { score: number; label?: string }) 
   return (
     <div className="flex flex-col items-center gap-3">
       <div className="relative" style={{ width: SIZE, height: SIZE }}>
-        <svg width={SIZE} height={SIZE} className="-rotate-90">
+        {/* docs/outrun/01 "Growth Scores should feel important" — a soft
+            halo in the score's own color, not a generic glow, so a healthy
+            score visibly reads as healthy before you even see the number. */}
+        <div
+          aria-hidden
+          className="absolute inset-[-18px] rounded-full opacity-40 blur-2xl"
+          style={{ background: `radial-gradient(circle, ${color}, transparent 70%)` }}
+        />
+        <svg width={SIZE} height={SIZE} className="relative -rotate-90">
           <circle
             cx={SIZE / 2}
             cy={SIZE / 2}
