@@ -27,7 +27,7 @@ export default function DashboardError({
   return (
     <Card className="mx-auto max-w-lg text-center">
       <h2 className="text-lg font-medium text-[var(--color-text-primary)]">
-        Mission Control couldn&apos;t load
+        Dashboard couldn&apos;t load
       </h2>
       <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
         Something went wrong pulling your dashboard together. It&apos;s been logged

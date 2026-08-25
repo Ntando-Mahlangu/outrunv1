@@ -97,7 +97,7 @@ export function BlueprintPending({
         Your Growth Blueprint isn&apos;t ready yet.
       </p>
       <p className="text-sm text-[var(--color-text-secondary)]">
-        Generate it to unlock Mission Control, your Growth Score, and AI Opportunities.
+        Generate it to unlock your Dashboard, Growth Score, and AI Opportunities.
       </p>
       <FormError message={startError ?? lastFailedError ?? null} />
       <Button onClick={start} disabled={isStarting}>

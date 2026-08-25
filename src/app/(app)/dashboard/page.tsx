@@ -19,6 +19,7 @@ import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
 import { ImpactBadge, Badge } from "@/components/ui/badge";
 import { ScoreGauge } from "@/components/growth-blueprint/score-gauge";
+import { ProgressBar } from "@/components/ui/progress-bar";
 import { EvidenceToggle } from "@/components/dashboard/evidence-toggle";
 import { CampaignOverviewWidget } from "@/components/dashboard/campaign-overview-widget";
 import { RightSidebar } from "@/components/dashboard/right-sidebar";
@@ -376,18 +377,48 @@ export default async function DashboardPage() {
                 </p>
               ) : (
                 <>
-                  <p className="mt-2 text-2xl font-light text-[var(--color-text-primary)]">
-                    {goalsTasksSummary.goals.completed}
-                    <span className="text-base text-[var(--color-text-muted)]">
-                      {" "}
-                      / {goalsTasksSummary.goals.total} completed
+                  <div className="mt-2 mb-1.5 flex items-center justify-between text-sm">
+                    <span className="text-[var(--color-text-secondary)]">
+                      {goalsTasksSummary.goals.active} active
+                      {goalsTasksSummary.goals.abandoned > 0 &&
+                        ` · ${goalsTasksSummary.goals.abandoned} abandoned`}
                     </span>
-                  </p>
-                  <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-                    {goalsTasksSummary.goals.active} active
-                    {goalsTasksSummary.goals.abandoned > 0 &&
-                      ` · ${goalsTasksSummary.goals.abandoned} abandoned`}
-                  </p>
+                    <span className="tabular-nums text-[var(--color-text-muted)]">
+                      {goalsTasksSummary.goals.completed} / {goalsTasksSummary.goals.total} completed
+                    </span>
+                  </div>
+                  <ProgressBar value={goalsTasksSummary.goals.completionPercent} />
+
+                  {goalsTasksSummary.goals.upcoming.length > 0 && (
+                    <ul className="mt-4 space-y-3">
+                      {goalsTasksSummary.goals.upcoming.map((goal) => (
+                        <li key={goal.id}>
+                          <div className="flex items-center justify-between gap-2 text-xs">
+                            <span className="truncate text-[var(--color-text-secondary)]">
+                              {goal.title}
+                            </span>
+                            {goal.targetDate && (
+                              <span
+                                className={cn(
+                                  "shrink-0 tabular-nums",
+                                  goal.isOverdue
+                                    ? "text-[var(--color-error-text)]"
+                                    : "text-[var(--color-text-muted)]",
+                                )}
+                              >
+                                {goal.isOverdue ? "Overdue" : `Due ${goal.targetDate.toLocaleDateString()}`}
+                              </span>
+                            )}
+                          </div>
+                          {goal.progressPercent != null && (
+                            <div className="mt-1">
+                              <ProgressBar value={goal.progressPercent} />
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </>
               )}
             </div>
@@ -404,18 +435,34 @@ export default async function DashboardPage() {
                 </p>
               ) : (
                 <>
-                  <p className="mt-2 text-2xl font-light text-[var(--color-text-primary)]">
-                    {goalsTasksSummary.tasks.completed}
-                    <span className="text-base text-[var(--color-text-muted)]">
-                      {" "}
-                      / {goalsTasksSummary.tasks.total} completed
+                  <div className="mt-2 mb-1.5 flex items-center justify-between text-sm">
+                    <span className="text-[var(--color-text-secondary)]">
+                      {goalsTasksSummary.tasks.pending} pending
+                      {goalsTasksSummary.tasks.dismissed > 0 &&
+                        ` · ${goalsTasksSummary.tasks.dismissed} dismissed`}
                     </span>
-                  </p>
-                  <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-                    {goalsTasksSummary.tasks.pending} pending
-                    {goalsTasksSummary.tasks.dismissed > 0 &&
-                      ` · ${goalsTasksSummary.tasks.dismissed} dismissed`}
-                  </p>
+                    <span className="tabular-nums text-[var(--color-text-muted)]">
+                      {goalsTasksSummary.tasks.completed} / {goalsTasksSummary.tasks.total} completed
+                    </span>
+                  </div>
+                  <ProgressBar value={goalsTasksSummary.tasks.completionPercent} />
+
+                  {goalsTasksSummary.tasks.next && (
+                    <div className="mt-4 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
+                          Do next
+                        </p>
+                        <ImpactBadge
+                          level={goalsTasksSummary.tasks.next.impact}
+                          label={`${goalsTasksSummary.tasks.next.impact} impact`}
+                        />
+                      </div>
+                      <p className="mt-1 text-sm text-[var(--color-text-primary)]">
+                        {goalsTasksSummary.tasks.next.title}
+                      </p>
+                    </div>
+                  )}
                 </>
               )}
             </div>

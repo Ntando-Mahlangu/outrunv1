@@ -9,7 +9,7 @@ import { cn } from "@/lib/cn";
 // PLACEHOLDERS — reserve dashboard locations, do not build them now", we
 // only list routes that exist today; add entries here as each ships.
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Mission Control" },
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/blueprint", label: "Growth Blueprint" },
   { href: "/tasks", label: "Tasks" },
   { href: "/goals", label: "Goals" },

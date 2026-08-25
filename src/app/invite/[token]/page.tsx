@@ -55,7 +55,7 @@ export default async function InviteAcceptPage({
               You&apos;ve already joined {invitation.organization.name}.
             </CardDescription>
             <Link href="/dashboard" className="inline-block text-sm text-[var(--color-accent-text)] hover:underline">
-              Go to Mission Control
+              Go to Dashboard
             </Link>
           </CardHeader>
         ) : (
