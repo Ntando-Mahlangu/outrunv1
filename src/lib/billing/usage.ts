@@ -13,7 +13,7 @@ import { UserFacingError } from "@/lib/errors";
 // plan page, not just AI generation types.
 const LIMITS: Partial<Record<PlanTier, Partial<Record<UsageEventType, number>>>> = {
   FREE: {
-    [UsageEventType.COMPANY_SEARCH]: 10,
+    [UsageEventType.COMPANY_SEARCH]: 15, // TODO: revert to 10 after Foursquare testing
     [UsageEventType.COMPANY_RESEARCH]: 10,
     [UsageEventType.OUTREACH_GENERATION]: 5,
     [UsageEventType.BLUEPRINT_GENERATION]: 1,

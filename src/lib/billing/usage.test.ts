@@ -70,7 +70,7 @@ describe("checkAndRecordUsage (integration)", () => {
     const summary = await getUsageSummary(organizationId, "FREE");
     const searchEntry = summary.find((s) => s.type === UsageEventType.COMPANY_SEARCH);
     expect(searchEntry?.used).toBe(1);
-    expect(searchEntry?.limit).toBe(10);
+    expect(searchEntry?.limit).toBe(15);
   });
 });
 
