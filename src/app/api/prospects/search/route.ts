@@ -8,7 +8,7 @@ import { scoreCompany } from "@/lib/leads/scoring";
 import { parseSearchQuery, applyPostFilters } from "@/lib/leads/query-parser";
 import * as companyRepository from "@/lib/repositories/company-repository";
 import * as growthBlueprintRepository from "@/lib/repositories/growth-blueprint-repository";
-import { checkAndRecordUsage } from "@/lib/billing/usage";
+import { assertUsageAvailable, recordUsage } from "@/lib/billing/usage";
 import { logEvent, EventType } from "@/lib/memory/log-event";
 import { UserFacingError, RateLimitError } from "@/lib/errors";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
@@ -58,7 +58,13 @@ export async function POST(request: NextRequest) {
       RATE_LIMITS.SEARCH.limit,
       RATE_LIMITS.SEARCH.windowSeconds,
     );
-    await checkAndRecordUsage(organization.id, UsageEventType.COMPANY_SEARCH);
+    // Check-only here — recorded below, only once the provider search has
+    // actually come back, so a failed attempt (a provider outage, a bad
+    // API key, an unexpected response shape) never burns a free-tier
+    // org's limited search allotment on nothing. Same split already used
+    // for Blueprint generation (src/lib/jobs/queue.ts) and for exactly
+    // the same reason.
+    await assertUsageAvailable(organization.id, UsageEventType.COMPANY_SEARCH);
 
     const parsedQuery = await parseSearchQuery(query);
 
@@ -68,6 +74,7 @@ export async function POST(request: NextRequest) {
       location: parsedQuery.location,
       osmTags: parsedQuery.osmTags,
     });
+    await recordUsage(organization.id, UsageEventType.COMPANY_SEARCH);
     const results = applyPostFilters(rawResults, parsedQuery.postFilters);
 
     const latestBlueprint = await growthBlueprintRepository.findLatestIcpForOrg(organization.id);
