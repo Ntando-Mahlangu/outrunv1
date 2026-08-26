@@ -12,6 +12,7 @@ test.describe("authentication", () => {
     await page.locator("#lastName").fill("Lovelace");
     await page.locator("#email").fill(email);
     await page.locator("#password").fill("correct-horse-battery-staple");
+    await page.getByRole("checkbox").check();
     await page.getByRole("button", { name: "Continue" }).click();
 
     await expect(page).toHaveURL(/\/verify-email/);

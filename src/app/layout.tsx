@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { AnalyticsScripts } from "@/components/analytics/analytics-scripts";
+import { CookieConsentBanner } from "@/components/legal/cookie-consent-banner";
+import { COOKIE_CONSENT_COOKIE, isCookieConsent } from "@/lib/cookie-consent";
 import "./globals.css";
 
 const SITE_URL = "https://outrunv1.online";
@@ -42,11 +44,19 @@ export default async function RootLayout({
   const locale = await getLocale();
   const messages = await getMessages();
 
+  // docs/outrun/15 "LEGAL — cookie consent." AnalyticsScripts (Google
+  // Analytics + Ads) only ever renders once this cookie says "accepted" —
+  // "Decline" in the banner below is an actual block on the request that
+  // would set tracking cookies, not just a UI preference nobody enforces.
+  const consentValue = (await cookies()).get(COOKIE_CONSENT_COOKIE)?.value;
+  const consent = isCookieConsent(consentValue) ? consentValue : null;
+
   return (
     <html lang={locale}>
       <body>
         <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>
-        <AnalyticsScripts nonce={nonce} />
+        {consent === "accepted" && <AnalyticsScripts nonce={nonce} />}
+        <CookieConsentBanner initialConsent={consent} />
       </body>
     </html>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { Company } from "@prisma/client";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
@@ -20,7 +20,7 @@ import { Magnetic } from "@/components/motion/magnetic";
 type Interpretation = {
   searchedFor: string;
   unsupportedIntents: string[];
-  provider: "google_places" | "openstreetmap";
+  provider: "google_places" | "foursquare" | "yelp" | "openstreetmap";
 };
 
 export default function ProspectsPage() {
@@ -29,8 +29,13 @@ export default function ProspectsPage() {
   const [interpretation, setInterpretation] = useState<Interpretation | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importSummary, setImportSummary] = useState<{ imported: number; skipped: string[] } | null>(
+    null,
+  );
   const [filters, setFilters] = useState<ProspectFilters>(DEFAULT_PROSPECT_FILTERS);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const categories = useMemo(
     () =>
@@ -76,6 +81,34 @@ export default function ProspectsPage() {
     }
   }
 
+  async function handleImportFile(file: File) {
+    setError(null);
+    setImportSummary(null);
+    setIsImporting(true);
+    setSelectedIds(new Set());
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/prospects/import", { method: "POST", body: formData });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Something went wrong.");
+
+      setCompanies((prev) => {
+        const byId = new Map((prev ?? []).map((c) => [c.id, c]));
+        (body.companies as Company[]).forEach((c) => byId.set(c.id, c));
+        return Array.from(byId.values());
+      });
+      setInterpretation(null);
+      setImportSummary({ imported: body.companies.length, skipped: body.skipped ?? [] });
+      setFilters(DEFAULT_PROSPECT_FILTERS);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setIsImporting(false);
+    }
+  }
+
   return (
     <div className="animate-fade-in space-y-6">
       <div className="flex items-start justify-between gap-4">
@@ -109,9 +142,47 @@ export default function ProspectsPage() {
             {isSearching ? "Searching…" : "Search"}
           </Button>
         </Magnetic>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv,text/csv"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleImportFile(file);
+            e.target.value = "";
+          }}
+        />
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={isImporting}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          {isImporting ? "Importing…" : "Import CSV"}
+        </Button>
       </form>
 
       <FormError message={error} />
+
+      {importSummary && (
+        <div className="space-y-1 text-sm text-[var(--color-text-secondary)]">
+          <p>
+            Imported{" "}
+            <span className="text-[var(--color-text-primary)]">
+              {importSummary.imported} compan{importSummary.imported === 1 ? "y" : "ies"}
+            </span>{" "}
+            from your CSV.
+          </p>
+          {importSummary.skipped.length > 0 && (
+            <ul className="list-disc space-y-0.5 pl-5 text-xs text-[var(--color-text-muted)]">
+              {importSummary.skipped.map((reason, i) => (
+                <li key={i}>{reason}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {interpretation && companies !== null && (
         <div className="text-sm text-[var(--color-text-secondary)]">
@@ -144,10 +215,27 @@ export default function ProspectsPage() {
               You&apos;re on the free OpenStreetMap data source — its coverage comes entirely from
               community mapping, so results depend on how thoroughly businesses in this area have
               actually been mapped, and can be patchy outside well-mapped cities. A broader
-              category or a bigger nearby city sometimes turns up more; connecting a Google Places
-              API key to your Outrun deployment is the reliable fix for consistently dense results
-              — ask whoever manages your Outrun hosting to set{" "}
+              category or a bigger nearby city sometimes turns up more; connecting a Foursquare or
+              Google Places API key to your Outrun deployment is the reliable fix for consistently
+              dense results — ask whoever manages your Outrun hosting to set{" "}
+              <code className="text-[var(--color-text-secondary)]">FOURSQUARE_API_KEY</code> or{" "}
               <code className="text-[var(--color-text-secondary)]">GOOGLE_PLACES_API_KEY</code>.
+            </p>
+          )}
+          {interpretation?.provider === "foursquare" && (
+            <p>
+              You&apos;re on the Foursquare data source — a broader category or a bigger nearby
+              city sometimes turns up more. Foursquare doesn&apos;t return ratings or review
+              counts, so those won&apos;t factor into Fit/Confidence scores for these results.
+            </p>
+          )}
+          {interpretation?.provider === "yelp" && (
+            <p>
+              You&apos;re on the Yelp data source — a broader category or a bigger nearby
+              city sometimes turns up more. Yelp&apos;s coverage also skews toward
+              consumer-facing, reviewable businesses (restaurants, salons, home services) rather
+              than B2B categories like law firms or agencies, and it never returns a business&apos;s
+              own website, so website-based filters won&apos;t be reliable here.
             </p>
           )}
         </div>

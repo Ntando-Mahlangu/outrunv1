@@ -21,6 +21,15 @@ model User {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
+  // Durable, timestamped proof of clickwrap acceptance (docs/outrun/15
+  // "LEGAL") — every sign-up path (email/password, Google, Microsoft,
+  // magic link) funnels through /welcome as the first authenticated page,
+  // which is where this gets recorded; see src/lib/legal.ts for the
+  // current version string. termsVersion lets a future re-acceptance
+  // prompt tell "never agreed" apart from "agreed to an older version."
+  termsAcceptedAt DateTime?
+  termsVersion    String?
+
   sessions    Session[]
   accounts    Account[]
   memberships Membership[]
@@ -630,6 +639,7 @@ enum EventType {
   FOLLOW_UP_SEQUENCE_GENERATED
   CALL_SCRIPT_GENERATED
   CALL_LOGGED
+  COMPANY_IMPORTED
   LEAD_LIST_CREATED
   REFUND_REQUESTED
   TASK_COMPLETED

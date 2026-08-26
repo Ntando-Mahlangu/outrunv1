@@ -11,7 +11,13 @@ import { FormError } from "@/components/ui/form-error";
 // alternative shown on both sign-in and sign-up — Better Auth creates a
 // new account automatically the first time an unrecognized email uses
 // this, so one form genuinely covers both flows.
-export function MagicLinkPanel({ initialEmail }: { initialEmail: string }) {
+export function MagicLinkPanel({
+  initialEmail,
+  disabled,
+}: {
+  initialEmail: string;
+  disabled?: boolean;
+}) {
   const [email, setEmail] = useState(initialEmail);
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -74,7 +80,7 @@ export function MagicLinkPanel({ initialEmail }: { initialEmail: string }) {
           onChange={(e) => setEmail(e.target.value)}
         />
       </div>
-      <Button type="submit" variant="secondary" className="w-full" disabled={isSubmitting}>
+      <Button type="submit" variant="secondary" className="w-full" disabled={isSubmitting || disabled}>
         {isSubmitting ? "Sending…" : "Email me a sign-in link"}
       </Button>
     </form>

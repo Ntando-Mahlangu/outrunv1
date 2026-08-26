@@ -40,13 +40,15 @@ export function LegalPage({
 
 export function LegalSection({
   title,
+  id,
   children,
 }: {
   title: string;
+  id?: string;
   children: React.ReactNode;
 }) {
   return (
-    <section>
+    <section id={id} className="scroll-mt-8">
       <h2 className="text-lg font-medium text-[var(--color-text-primary)]">{title}</h2>
       <div className="mt-2 space-y-3 text-sm leading-relaxed text-[var(--color-text-secondary)]">
         {children}
