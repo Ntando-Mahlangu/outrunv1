@@ -306,17 +306,70 @@ export default async function DashboardPage() {
           <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
             Business Snapshot
           </h2>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div>
+
+          {/* Hero row — the two dollar figures that actually matter get
+              their own bordered panel and a progress bar where there's a
+              real target to measure against, instead of sitting flush in
+              the same flat grid as every other count. */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-4">
               <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
                 Revenue Goal
               </p>
-              <p className="text-sm text-[var(--color-text-primary)]">
-                {snapshot.revenueGoal
-                  ? `${snapshot.revenueGoal.currentValue.toLocaleString()} / ${snapshot.revenueGoal.targetValue.toLocaleString()}`
-                  : "Not set — add one on Goals"}
-              </p>
+              {snapshot.revenueGoal ? (
+                <>
+                  <p className="mt-2 text-2xl font-light text-[var(--color-text-primary)]">
+                    <CountUp value={snapshot.revenueGoal.currentValue} prefix="$" />
+                    <span className="text-sm text-[var(--color-text-muted)]">
+                      {" "}
+                      / ${snapshot.revenueGoal.targetValue.toLocaleString()}
+                    </span>
+                  </p>
+                  <div className="mt-2">
+                    <ProgressBar
+                      value={
+                        snapshot.revenueGoal.targetValue > 0
+                          ? (snapshot.revenueGoal.currentValue / snapshot.revenueGoal.targetValue) * 100
+                          : 0
+                      }
+                    />
+                  </div>
+                </>
+              ) : (
+                <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+                  Not set —{" "}
+                  <Link href="/goals" className="text-[var(--color-accent-text)] hover:underline">
+                    add one on Goals
+                  </Link>
+                </p>
+              )}
             </div>
+
+            <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-4">
+              <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
+                Pipeline Value
+              </p>
+              {snapshot.pipelineValue ? (
+                <>
+                  <p className="mt-2 text-2xl font-light text-[var(--color-text-primary)]">
+                    <CountUp value={snapshot.pipelineValue.estimate} prefix="$" />
+                  </p>
+                  <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+                    {snapshot.pipelineValue.qualifiedCount} qualified lead
+                    {snapshot.pipelineValue.qualifiedCount === 1 ? "" : "s"} × $
+                    {snapshot.pipelineValue.avgCustomerValue.toLocaleString()} avg deal size
+                  </p>
+                </>
+              ) : (
+                <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+                  Not tracked yet — needs an average deal size and at least one Qualified contact
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Secondary metrics — consistent size, one glance to scan. */}
+          <div className="mt-5 grid grid-cols-2 gap-4 border-t border-[var(--color-border)] pt-5 sm:grid-cols-4">
             <div>
               <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
                 Campaigns Running
@@ -324,12 +377,6 @@ export default async function DashboardPage() {
               <p className="text-2xl font-light text-[var(--color-text-primary)]">
                 <CountUp value={snapshot.campaignsRunning} />
               </p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
-                Meetings Booked
-              </p>
-              <p className="text-sm text-[var(--color-text-muted)]">Not tracked yet</p>
             </div>
             <div>
               <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
@@ -359,33 +406,18 @@ export default async function DashboardPage() {
                 <CountUp value={snapshot.customersWon} />
               </p>
             </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
-                Pipeline Value
-              </p>
-              {snapshot.pipelineValue ? (
-                <>
-                  <p className="text-2xl font-light text-[var(--color-text-primary)]">
-                    <CountUp value={snapshot.pipelineValue.estimate} prefix="$" />
-                  </p>
-                  <p className="text-xs text-[var(--color-text-muted)]">
-                    Estimate: {snapshot.pipelineValue.qualifiedCount} qualified lead
-                    {snapshot.pipelineValue.qualifiedCount === 1 ? "" : "s"} × $
-                    {snapshot.pipelineValue.avgCustomerValue.toLocaleString()} avg deal size
-                  </p>
-                </>
-              ) : (
-                <p className="text-sm text-[var(--color-text-muted)]">
-                  Not tracked yet — needs an average deal size and at least one Qualified contact
-                </p>
-              )}
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
-                Plan
-              </p>
-              <p className="text-sm text-[var(--color-text-primary)]">{organization.planTier}</p>
-            </div>
+          </div>
+
+          {/* Footer — context, not competing for attention with real
+              metrics. Meetings Booked has no real number behind it yet
+              (docs/outrun/04 — never invent a figure), so it reads as a
+              plain note here instead of an empty-looking stat tile. */}
+          <div className="mt-5 flex items-center justify-between border-t border-[var(--color-border)] pt-4 text-xs text-[var(--color-text-muted)]">
+            <span>
+              Plan:{" "}
+              <span className="text-[var(--color-text-secondary)]">{organization.planTier}</span>
+            </span>
+            <span>Meetings booked — not tracked yet</span>
           </div>
         </Card>
         </RevealItem>
