@@ -1,5 +1,6 @@
 import type { CompanyDataProvider } from "./types";
 import { GooglePlacesProvider } from "./google-places-provider";
+import { FoursquareProvider } from "./foursquare-provider";
 import { YelpProvider } from "./yelp-provider";
 import { OsmPlacesProvider } from "./osm-provider";
 
@@ -10,23 +11,28 @@ let provider: CompanyDataProvider | null = null;
 /**
  * Same swap pattern as src/lib/ai/index.ts — one place decides the
  * provider, in order of data quality: Google Places (paid, best data —
- * ratings, review counts, reliable phone/website) if configured; else Yelp
- * (free, real API — denser local-business coverage than OSM but never
- * returns a business's own website, see yelp-provider.ts) if configured;
- * else OpenStreetMap (free, no key, coverage depends entirely on
- * volunteer mapping — see osm-provider.ts) as the zero-config default, so
- * company search always works out of the box.
+ * ratings, review counts, reliable phone/website) if configured; else
+ * Foursquare (500 free calls/month, real phone/website data but no
+ * ratings — see foursquare-provider.ts) if configured; else Yelp (paid
+ * from the first call as of 2024, denser local-business coverage than OSM
+ * but never returns a business's own website — see yelp-provider.ts) if
+ * configured; else OpenStreetMap (free, no key, coverage depends entirely
+ * on volunteer mapping — see osm-provider.ts) as the zero-config default,
+ * so company search always works out of the box.
  */
 export function getCompanyDataProvider(): CompanyDataProvider {
   if (provider) return provider;
 
   const googleKey = process.env.GOOGLE_PLACES_API_KEY;
+  const foursquareKey = process.env.FOURSQUARE_API_KEY;
   const yelpKey = process.env.YELP_API_KEY;
   provider = googleKey
     ? new GooglePlacesProvider(googleKey)
-    : yelpKey
-      ? new YelpProvider(yelpKey)
-      : new OsmPlacesProvider();
+    : foursquareKey
+      ? new FoursquareProvider(foursquareKey)
+      : yelpKey
+        ? new YelpProvider(yelpKey)
+        : new OsmPlacesProvider();
   return provider;
 }
 
@@ -40,8 +46,13 @@ export function isCompanySearchConfigured(): boolean {
  * there" and a known limitation of whichever free provider is active.
  * Without this, that distinction is invisible and reads as a bug.
  */
-export function getActiveCompanyDataProviderName(): "google_places" | "yelp" | "openstreetmap" {
+export function getActiveCompanyDataProviderName():
+  | "google_places"
+  | "foursquare"
+  | "yelp"
+  | "openstreetmap" {
   if (process.env.GOOGLE_PLACES_API_KEY) return "google_places";
+  if (process.env.FOURSQUARE_API_KEY) return "foursquare";
   if (process.env.YELP_API_KEY) return "yelp";
   return "openstreetmap";
 }

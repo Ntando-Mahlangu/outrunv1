@@ -48,7 +48,8 @@ inline there. Summary of what's required vs. optional:
 | `RESEND_API_KEY` / `EMAIL_FROM` | **Yes in production** | Sign-up now requires a verified email before a session is issued (see §9h) — without a real send path, a new user's verification link only ever reaches the server console and they can never get in. Safe to leave unset in development only. |
 | `ANTHROPIC_API_KEY` | Yes | Growth Blueprint, company research, and outreach generation all depend on this |
 | `GOOGLE_PLACES_API_KEY` | Optional | Prospect search works with no config via OpenStreetMap (free, no key); set this to upgrade to Google Places for the best data quality (ratings, review counts) |
-| `YELP_API_KEY` | Optional | Free, real API, tried before falling back to OpenStreetMap if `GOOGLE_PLACES_API_KEY` isn't set — denser local-business coverage than OSM, but never returns a business's own website. Get one free at yelp.com/developers/v3/manage_app |
+| `FOURSQUARE_API_KEY` | Optional | 500 free calls/month then paid, tried before Yelp/OpenStreetMap if `GOOGLE_PLACES_API_KEY` isn't set — real phone/website data, but no ratings/review counts (that's a separate paid Foursquare tier this app never requests). Get one at foursquare.com/developers |
+| `YELP_API_KEY` | Optional | Paid from the first call as of 2024, tried before falling back to OpenStreetMap if neither `GOOGLE_PLACES_API_KEY` nor `FOURSQUARE_API_KEY` is set — denser local-business coverage than OSM, but never returns a business's own website. Get one at yelp.com/developers/v3/manage_app |
 | `PADDLE_API_KEY` / `PADDLE_WEBHOOK_SECRET` | Yes | Billing |
 | `NEXT_PUBLIC_PADDLE_ENVIRONMENT` | Yes | `sandbox` while testing, `production` when live |
 | `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN` | Yes | Paddle → Developer Tools → Authentication → Client-side tokens |

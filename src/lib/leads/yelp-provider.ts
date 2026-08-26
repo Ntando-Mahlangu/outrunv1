@@ -1,6 +1,6 @@
-import type { CompanyDataProvider, CompanySearchQuery, OsmTag, RawCompanyResult } from "./types";
+import type { CompanyDataProvider, CompanySearchQuery, RawCompanyResult } from "./types";
 import { withRetry, HttpError } from "@/lib/resilience/retry";
-import { isValidOsmTag, OSM_TAG_REFERENCE } from "./osm-tags";
+import { deriveSearchTerm } from "./derive-search-term";
 import { UserFacingError } from "@/lib/errors";
 
 // docs/outrun/06, docs/outrun/11 — a second free option between Google
@@ -37,37 +37,6 @@ type YelpSearchResponse = {
   businesses?: YelpBusiness[];
 };
 
-/** Exported for testing — pure. Yelp's Business Search takes a free-text
- * `term` (business type) separately from `location`, unlike Google Places'
- * combined phrase. Prefers the AI-picked OSM tag's human-readable category
- * (already curated in osm-tags.ts) since that's the cleanest signal of
- * "what kind of business," falling back to placesQuery with the location
- * portion stripped out when no tag was confidently picked. */
-export function deriveYelpTerm(query: CompanySearchQuery): string {
-  const tagCategory = firstKnownCategory(query.osmTags);
-  if (tagCategory) return tagCategory;
-
-  if (query.location.trim()) {
-    const escapedLocation = query.location.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const stripped = query.placesQuery
-      .replace(new RegExp(`\\b(in|near|around)\\s+${escapedLocation}\\b`, "i"), "")
-      .replace(new RegExp(`\\b${escapedLocation}\\b`, "i"), "")
-      .trim();
-    if (stripped) return stripped;
-  }
-
-  return query.placesQuery;
-}
-
-function firstKnownCategory(tags: OsmTag[]): string | null {
-  for (const tag of tags) {
-    if (!isValidOsmTag(tag)) continue;
-    const match = OSM_TAG_REFERENCE.find((r) => r.key === tag.key && r.value === tag.value);
-    if (match) return match.category;
-  }
-  return null;
-}
-
 export class YelpProvider implements CompanyDataProvider {
   constructor(private apiKey: string) {}
 
@@ -78,7 +47,7 @@ export class YelpProvider implements CompanyDataProvider {
 
     const url = new URL(YELP_SEARCH_URL);
     url.searchParams.set("location", query.location);
-    const term = deriveYelpTerm(query);
+    const term = deriveSearchTerm(query);
     if (term) url.searchParams.set("term", term);
     url.searchParams.set("limit", String(RESULT_LIMIT));
 

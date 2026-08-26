@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { deriveYelpTerm } from "./yelp-provider";
+import { deriveSearchTerm } from "./derive-search-term";
 
-describe("deriveYelpTerm", () => {
+describe("deriveSearchTerm", () => {
   it("prefers a known category from a valid OSM tag", () => {
-    const term = deriveYelpTerm({
+    const term = deriveSearchTerm({
       placesQuery: "plumbers in Chicago",
       location: "Chicago",
       osmTags: [{ key: "craft", value: "plumber" }],
@@ -12,7 +12,7 @@ describe("deriveYelpTerm", () => {
   });
 
   it("ignores a tag that isn't on the allowlist and falls through to placesQuery", () => {
-    const term = deriveYelpTerm({
+    const term = deriveSearchTerm({
       placesQuery: "commercial buildings in Chicago",
       location: "Chicago",
       osmTags: [{ key: "building", value: "commercial" }],
@@ -21,7 +21,7 @@ describe("deriveYelpTerm", () => {
   });
 
   it("strips the location out of placesQuery when there's no usable tag", () => {
-    const term = deriveYelpTerm({
+    const term = deriveSearchTerm({
       placesQuery: "cafes near Austin",
       location: "Austin",
       osmTags: [],
@@ -30,7 +30,7 @@ describe("deriveYelpTerm", () => {
   });
 
   it("falls back to the raw placesQuery when location can't be stripped out", () => {
-    const term = deriveYelpTerm({
+    const term = deriveSearchTerm({
       placesQuery: "any businesses",
       location: "Austin",
       osmTags: [],
@@ -39,7 +39,7 @@ describe("deriveYelpTerm", () => {
   });
 
   it("handles a location containing regex special characters safely", () => {
-    const term = deriveYelpTerm({
+    const term = deriveSearchTerm({
       placesQuery: "dentists in St. Louis",
       location: "St. Louis",
       osmTags: [],
