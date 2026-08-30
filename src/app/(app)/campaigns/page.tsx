@@ -83,7 +83,7 @@ export default async function CampaignsPage({
       </div>
 
       {totalCount === 0 ? (
-        <Card className="text-center">
+        <Card interactive className="text-center">
           <p className="text-[var(--color-text-secondary)]">
             You haven&apos;t created your first campaign yet. Research a few
             prospects, then build a campaign around them.
@@ -95,7 +95,7 @@ export default async function CampaignsPage({
       ) : (
         <div className="space-y-4">
           {campaigns.map((campaign) => (
-            <Card key={campaign.id} className="transition-colors hover:border-[var(--color-accent)]/40">
+            <Card key={campaign.id} interactive>
               <div className="flex items-center justify-between gap-4">
                 <Link href={`/campaigns/${campaign.id}`} className="min-w-0">
                   <p className="font-medium text-[var(--color-text-primary)] hover:underline">

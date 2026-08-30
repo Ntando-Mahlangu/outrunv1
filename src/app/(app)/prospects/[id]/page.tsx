@@ -104,12 +104,12 @@ export default async function ProspectDetailPage({
         </div>
       </div>
 
-      <Card>
+      <Card interactive>
         <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">Contacts</h2>
         <ContactsPanel companyId={company.id} initialContacts={contacts} />
       </Card>
 
-      <Card>
+      <Card interactive>
         <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
           AI Research
         </h2>
@@ -119,7 +119,7 @@ export default async function ProspectDetailPage({
         />
       </Card>
 
-      <Card>
+      <Card interactive>
         <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
           Outreach
         </h2>
@@ -132,7 +132,7 @@ export default async function ProspectDetailPage({
         />
       </Card>
 
-      <Card>
+      <Card interactive>
         <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
           Cold Call Script
         </h2>
@@ -144,7 +144,7 @@ export default async function ProspectDetailPage({
         />
       </Card>
 
-      <Card>
+      <Card interactive>
         <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">Call Outcomes</h2>
         <CallLogPanel companyId={company.id} contacts={contacts} initialCallLogs={callLogs} />
       </Card>

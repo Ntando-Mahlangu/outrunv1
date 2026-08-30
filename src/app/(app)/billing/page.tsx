@@ -50,7 +50,7 @@ export default async function BillingPage() {
         </p>
       </div>
 
-      <Card>
+      <Card interactive>
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
@@ -74,7 +74,7 @@ export default async function BillingPage() {
         )}
       </Card>
 
-      <Card>
+      <Card interactive>
         <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
           Team Seats
         </h2>
@@ -89,7 +89,7 @@ export default async function BillingPage() {
         </div>
       </Card>
 
-      <Card>
+      <Card interactive>
         <h2 className="mb-1 text-lg font-medium text-[var(--color-text-primary)]">
           Usage
         </h2>
@@ -121,7 +121,11 @@ export default async function BillingPage() {
           const isCurrent = organization.planTier === tier;
 
           return (
-            <Card key={tier} className={isCurrent ? "border-[var(--color-accent)]/40" : ""}>
+            <Card
+              key={tier}
+              interactive
+              className={isCurrent ? "border-[var(--color-accent)]/40" : ""}
+            >
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-medium text-[var(--color-text-primary)]">
                   {plan.name}

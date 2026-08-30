@@ -132,7 +132,7 @@ export function GoalsPageClient({ initialGoals }: { initialGoals: Goal[] }) {
         </form>
       </Card>
 
-      <Card>
+      <Card interactive>
         <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
           Active ({active.length})
         </h2>
@@ -184,7 +184,7 @@ export function GoalsPageClient({ initialGoals }: { initialGoals: Goal[] }) {
       </Card>
 
       {inactive.length > 0 && (
-        <Card>
+        <Card interactive>
           <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
             Achieved &amp; abandoned
           </h2>

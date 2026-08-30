@@ -123,7 +123,7 @@ export function CampaignSendPanel({
     <>
       {hasVariants && <VariantComparison messages={messages} />}
 
-      <Card>
+      <Card interactive>
         <div className="flex items-center justify-between gap-4">
           <h2 className="text-lg font-medium text-[var(--color-text-primary)]">
             Outreach ({messages.length})
@@ -361,7 +361,7 @@ function VariantComparison({ messages }: { messages: MessageWithCompany[] }) {
       : null;
 
   return (
-    <Card>
+    <Card interactive>
       <h2 className="text-lg font-medium text-[var(--color-text-primary)]">
         A/B Comparison
       </h2>

@@ -39,7 +39,7 @@ export function CampaignExportPanel({
   }
 
   return (
-    <Card>
+    <Card interactive>
       <h2 className="text-lg font-medium text-[var(--color-text-primary)]">Exports</h2>
       <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
         Export this campaign&apos;s messages, performance, and call scripts.

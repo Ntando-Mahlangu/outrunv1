@@ -49,7 +49,7 @@ export default async function NewCampaignPage({
       </div>
 
       {companies.length === 0 ? (
-        <Card>
+        <Card interactive>
           <p className="text-[var(--color-text-secondary)]">
             You need at least one researched prospect before building a
             campaign.{" "}

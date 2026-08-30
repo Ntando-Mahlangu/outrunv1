@@ -172,7 +172,7 @@ export function TeamPageClient({
         </Card>
       )}
 
-      <Card>
+      <Card interactive>
         <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">Members</h2>
         <div className="space-y-3">
           {members.map((member) => (
@@ -221,7 +221,7 @@ export function TeamPageClient({
       </Card>
 
       {canManage && invitations.length > 0 && (
-        <Card>
+        <Card interactive>
           <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
             Pending Invitations
           </h2>

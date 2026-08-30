@@ -15,7 +15,7 @@ const PERIOD_TONE = {
 
 function ListSection({ title, items }: { title: string; items: string[] }) {
   return (
-    <Card>
+    <Card interactive>
       <h2 className="mb-3 text-lg font-medium text-[var(--color-text-primary)]">{title}</h2>
       {items.length === 0 ? (
         <p className="text-sm text-[var(--color-text-muted)]">Nothing notable this period.</p>
@@ -81,7 +81,7 @@ export default async function StrategicReviewDetailPage({
       <ListSection title="Key Learnings" items={review.keyLearnings as string[]} />
       <ListSection title="Recommended Priorities" items={review.recommendedPriorities as string[]} />
 
-      <Card>
+      <Card interactive>
         <h2 className="mb-3 text-lg font-medium text-[var(--color-text-primary)]">
           Next Growth Strategy
         </h2>

@@ -20,7 +20,7 @@ export default async function SeoPage() {
 
   if (!isFeatureEnabled(organization.planTier, FEATURE_FLAGS.SEO_ENGINE, organization.id)) {
     return (
-      <Card className="animate-fade-in">
+      <Card interactive className="animate-fade-in">
         <h1 className="text-xl font-medium text-[var(--color-text-primary)]">
           SEO Engine is a Starter feature
         </h1>

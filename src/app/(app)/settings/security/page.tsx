@@ -33,7 +33,7 @@ export default async function SecuritySettingsPage() {
         />
       </Card>
 
-      <Card>
+      <Card interactive>
         <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
           Active Sessions
         </h2>

@@ -78,7 +78,7 @@ export function BlueprintPending({
 
   if (isGenerating) {
     return (
-      <Card className="animate-fade-in text-center">
+      <Card interactive className="animate-fade-in text-center">
         <div className="mx-auto mb-6 size-10 animate-pulse rounded-full bg-[var(--color-accent)]" />
         <p className="text-lg font-light text-[var(--color-text-primary)]">
           Building your Growth Blueprint…
@@ -92,7 +92,7 @@ export function BlueprintPending({
   }
 
   return (
-    <Card className="animate-fade-in space-y-4 text-center">
+    <Card interactive className="animate-fade-in space-y-4 text-center">
       <p className="text-lg font-light text-[var(--color-text-primary)]">
         Your Growth Blueprint isn&apos;t ready yet.
       </p>

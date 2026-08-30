@@ -44,7 +44,7 @@ export function ApiKeysSection({
 
   if (!isEnabled) {
     return (
-      <Card>
+      <Card interactive>
         <h2 className="mb-1 text-lg font-medium text-[var(--color-text-primary)]">API Access</h2>
         <p className="text-sm text-[var(--color-text-secondary)]">
           Programmatic access to your prospects data is available on the Growth plan and

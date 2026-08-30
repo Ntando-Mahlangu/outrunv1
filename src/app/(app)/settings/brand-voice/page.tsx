@@ -30,7 +30,7 @@ export default async function BrandVoiceSettingsPage() {
         </p>
       </div>
 
-      <Card>
+      <Card interactive>
         <BrandVoicePanel
           initialVoice={isBrandVoice(organization.brandVoice) ? organization.brandVoice : null}
           canManage={canManageCampaigns(membership.role)}

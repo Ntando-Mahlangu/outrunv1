@@ -5,7 +5,7 @@ import type { Signal } from "@/lib/growth-partner/risks";
 export function RiskPanel({ signals }: { signals: Signal[] }) {
   if (signals.length === 0) {
     return (
-      <Card>
+      <Card interactive>
         <p className="text-sm text-[var(--color-text-secondary)]">
           Nothing needs your attention right now — no obvious risks detected.
         </p>
@@ -14,7 +14,7 @@ export function RiskPanel({ signals }: { signals: Signal[] }) {
   }
 
   return (
-    <Card>
+    <Card interactive>
       <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
         Risks &amp; Opportunities
       </h2>

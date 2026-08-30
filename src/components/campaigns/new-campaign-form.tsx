@@ -139,7 +139,7 @@ export function NewCampaignForm({
 
   if (isSubmitting) {
     return (
-      <Card className="text-center">
+      <Card interactive className="text-center">
         <div className="mx-auto mb-4 size-8 animate-pulse rounded-full bg-[var(--color-accent)]" />
         <p className="text-[var(--color-text-primary)]">
           Writing outreach for {selected.size} prospect{selected.size === 1 ? "" : "s"}…
@@ -250,7 +250,7 @@ export function NewCampaignForm({
 
       {step === "Strategy Review" && (
         <>
-          <Card>
+          <Card interactive>
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-medium text-[var(--color-text-primary)]">
                 AI Campaign Strategy
@@ -301,7 +301,7 @@ export function NewCampaignForm({
           </Card>
 
           {audienceWarnings.length > 0 && (
-            <Card>
+            <Card interactive>
               <h2 className="text-lg font-medium text-[var(--color-text-primary)]">Smart Warnings</h2>
               <div className="mt-3 space-y-3">
                 {audienceWarnings.map((w) => (
@@ -337,7 +337,7 @@ export function NewCampaignForm({
 
       {step === "Launch" && (
         <>
-          <Card>
+          <Card interactive>
             <h2 className="text-lg font-medium text-[var(--color-text-primary)]">Campaign Preview</h2>
             <dl className="mt-3 space-y-2 text-sm">
               <div className="flex justify-between">
@@ -361,7 +361,7 @@ export function NewCampaignForm({
             </dl>
           </Card>
 
-          <Card>
+          <Card interactive>
             <p className="text-sm font-medium text-[var(--color-text-primary)]">Brand voice</p>
             <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
               {brandVoice

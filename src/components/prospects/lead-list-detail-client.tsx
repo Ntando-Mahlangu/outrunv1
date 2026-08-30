@@ -183,7 +183,7 @@ export function LeadListDetailClient({
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {filteredCompanies.map((company) => (
-                <Card key={company.id} className="animate-fade-in">
+                <Card key={company.id} interactive className="animate-fade-in">
                   <div className="flex items-start gap-2">
                     <input
                       type="checkbox"

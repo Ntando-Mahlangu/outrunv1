@@ -153,7 +153,7 @@ export function OutreachPanel({
 
       <div className="space-y-4">
         {messages.map((message) => (
-          <Card key={message.id} className="bg-[var(--color-bg-secondary)]">
+          <Card key={message.id} interactive className="bg-[var(--color-bg-secondary)]">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">

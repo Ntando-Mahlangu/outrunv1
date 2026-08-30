@@ -125,7 +125,7 @@ export function TasksPageClient({ initialTasks }: { initialTasks: Task[] }) {
         </form>
       </Card>
 
-      <Card>
+      <Card interactive>
         <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
           Pending ({pending.length})
         </h2>
@@ -183,7 +183,7 @@ export function TasksPageClient({ initialTasks }: { initialTasks: Task[] }) {
       </Card>
 
       {done.length > 0 && (
-        <Card>
+        <Card interactive>
           <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
             Completed &amp; dismissed
           </h2>

@@ -72,7 +72,7 @@ export function AuditLogSection({
   actorNames: Map<string, string>;
 }) {
   return (
-    <Card>
+    <Card interactive>
       <h2 className="mb-1 text-lg font-medium text-[var(--color-text-primary)]">Audit Log</h2>
       <p className="mb-4 text-sm text-[var(--color-text-secondary)]">
         Every role change, removal, billing change, invite, and data export in this workspace.

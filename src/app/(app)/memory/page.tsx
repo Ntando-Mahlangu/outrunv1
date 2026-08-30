@@ -41,7 +41,7 @@ export default async function MemoryPage() {
         </a>
       </div>
 
-      <Card>
+      <Card interactive>
         <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
           Growth Timeline
         </h2>

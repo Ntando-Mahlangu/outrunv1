@@ -48,7 +48,7 @@ export function OpportunityFeedPanel({ items: initialItems }: { items: Opportuni
   }
 
   return (
-    <Card>
+    <Card interactive>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-medium text-[var(--color-text-primary)]">Opportunity Feed</h2>
         <select

@@ -112,7 +112,7 @@ export function CampaignLibraryClient({ initialTemplates }: { initialTemplates: 
           {templates.map((template) => {
             const isEditing = editingId === template.id;
             return (
-              <Card key={template.id}>
+              <Card key={template.id} interactive>
                 {isEditing && draft ? (
                   <div className="space-y-3">
                     <div>

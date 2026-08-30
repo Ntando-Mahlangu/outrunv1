@@ -64,7 +64,7 @@ export function BlueprintView({
         </p>
       </div>
 
-      <Card className="animate-fade-in flex flex-col items-center gap-6 sm:flex-row sm:items-start">
+      <Card interactive className="animate-fade-in flex flex-col items-center gap-6 sm:flex-row sm:items-start">
         <ScoreGauge score={blueprint.growthScore} label="Growth Score" />
         <div className="flex-1 space-y-2">
           <h2 className="text-lg font-medium text-[var(--color-text-primary)]">
@@ -76,7 +76,7 @@ export function BlueprintView({
         </div>
       </Card>
 
-      <Card className="animate-fade-in">
+      <Card interactive className="animate-fade-in">
         <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
           Business Snapshot
         </h2>
@@ -131,7 +131,7 @@ export function BlueprintView({
       </Card>
 
       <div className="grid gap-6 sm:grid-cols-2">
-        <Card className="animate-fade-in">
+        <Card interactive className="animate-fade-in">
           <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
             Strengths
           </h2>
@@ -145,7 +145,7 @@ export function BlueprintView({
           </ul>
         </Card>
 
-        <Card className="animate-fade-in">
+        <Card interactive className="animate-fade-in">
           <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
             Weaknesses
           </h2>
@@ -166,7 +166,7 @@ export function BlueprintView({
         </Card>
       </div>
 
-      <Card className="animate-fade-in border-[var(--color-accent)]/40">
+      <Card interactive className="animate-fade-in border-[var(--color-accent)]/40">
         <p className="text-xs uppercase tracking-wide text-[var(--color-accent-text)]">
           Biggest Opportunity
         </p>
@@ -188,7 +188,7 @@ export function BlueprintView({
         </p>
       </Card>
 
-      <Card className="animate-fade-in">
+      <Card interactive className="animate-fade-in">
         <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
           Highest ROI Opportunities
         </h2>
@@ -217,7 +217,7 @@ export function BlueprintView({
         </ul>
       </Card>
 
-      <Card className="animate-fade-in">
+      <Card interactive className="animate-fade-in">
         <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
           Recommended Growth Strategy
         </h2>
@@ -239,7 +239,7 @@ export function BlueprintView({
         </div>
       </Card>
 
-      <Card className="animate-fade-in">
+      <Card interactive className="animate-fade-in">
         <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
           Ideal Customer Profile
         </h2>
@@ -310,7 +310,7 @@ export function BlueprintView({
         </div>
       </Card>
 
-      <Card className="animate-fade-in">
+      <Card interactive className="animate-fade-in">
         <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
           Growth Roadmap
         </h2>
@@ -340,7 +340,7 @@ export function BlueprintView({
         </div>
       </Card>
 
-      <Card className="animate-fade-in">
+      <Card interactive className="animate-fade-in">
         <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
           Score Breakdown
         </h2>
@@ -360,7 +360,7 @@ export function BlueprintView({
       </Card>
 
       {websiteAnalysis && (
-        <Card className="animate-fade-in">
+        <Card interactive className="animate-fade-in">
           <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
             Website Analysis
           </h2>
@@ -422,7 +422,7 @@ export function BlueprintView({
         </Card>
       )}
 
-      <Card className="animate-fade-in bg-[var(--color-bg-secondary)]">
+      <Card interactive className="animate-fade-in bg-[var(--color-bg-secondary)]">
         <p className="text-sm text-[var(--color-text-muted)]">
           <span className="font-medium text-[var(--color-text-secondary)]">
             AI confidence notes:{" "}

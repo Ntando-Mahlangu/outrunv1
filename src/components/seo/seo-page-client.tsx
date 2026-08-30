@@ -144,7 +144,7 @@ export function SeoPageClient({
       )}
 
       {website && !analysis && (
-        <Card className="text-center">
+        <Card interactive className="text-center">
           <p className="text-sm text-[var(--color-text-secondary)]">
             Outrun will crawl {website} and generate a full SEO health report.
           </p>
@@ -158,7 +158,7 @@ export function SeoPageClient({
 
       {analysis && (
         <>
-          <Card className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
+          <Card interactive className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
             <ScoreGauge score={analysis.healthScore} label="SEO Health Score" />
             <div className="flex-1 space-y-2">
               <div className="flex items-center justify-between">
@@ -175,7 +175,7 @@ export function SeoPageClient({
             </div>
           </Card>
 
-          <Card>
+          <Card interactive>
             <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
               Quick Wins
             </h2>
@@ -186,7 +186,7 @@ export function SeoPageClient({
             </ul>
           </Card>
 
-          <Card>
+          <Card interactive>
             <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
               Score Breakdown
             </h2>
@@ -207,7 +207,7 @@ export function SeoPageClient({
           </Card>
 
           {analysis.localSeo && (
-            <Card>
+            <Card interactive>
               <h2 className="mb-1 text-lg font-medium text-[var(--color-text-primary)]">
                 Local SEO
               </h2>
@@ -276,7 +276,7 @@ export function SeoPageClient({
             </Card>
           )}
 
-          <Card>
+          <Card interactive>
             <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
               Keyword Suggestions
             </h2>
@@ -295,7 +295,7 @@ export function SeoPageClient({
             </div>
           </Card>
 
-          <Card>
+          <Card interactive>
             <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
               Content Ideas
             </h2>
@@ -332,7 +332,7 @@ export function SeoPageClient({
       )}
 
       {contentPieces.length > 0 && (
-        <Card>
+        <Card interactive>
           <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
             Generated Content
           </h2>

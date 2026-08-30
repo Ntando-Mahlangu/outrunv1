@@ -15,7 +15,7 @@ export function SecondWowSection({
   campaignId: string;
 }) {
   return (
-    <Card className="animate-fade-in border-[var(--color-accent)]/40 print:hidden">
+    <Card interactive className="animate-fade-in border-[var(--color-accent)]/40 print:hidden">
       <p className="text-xs uppercase tracking-wide text-[var(--color-accent-text)]">
         While you were reading this
       </p>

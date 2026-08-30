@@ -13,7 +13,7 @@ export function CampaignWarningsPanel({
   if (warnings.length === 0) return null;
 
   return (
-    <Card>
+    <Card interactive>
       <h2 className="text-lg font-medium text-[var(--color-text-primary)]">Smart Warnings</h2>
       <div className="mt-3 space-y-3">
         {warnings.map((w) => (

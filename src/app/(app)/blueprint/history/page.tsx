@@ -37,7 +37,7 @@ export default async function BlueprintHistoryPage() {
           const delta =
             entry.previousGrowthScore != null ? entry.growthScore - entry.previousGrowthScore : null;
           return (
-            <Card key={entry.version}>
+            <Card key={entry.version} interactive>
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-lg font-medium text-[var(--color-text-primary)]">

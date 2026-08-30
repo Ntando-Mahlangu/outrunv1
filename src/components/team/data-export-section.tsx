@@ -38,7 +38,7 @@ export function DataExportSection() {
   }
 
   return (
-    <Card>
+    <Card interactive>
       <h2 className="mb-1 text-lg font-medium text-[var(--color-text-primary)]">Export Your Data</h2>
       <p className="mb-4 text-sm text-[var(--color-text-secondary)]">
         Download everything this workspace owns — Growth Blueprints, prospects, campaigns,

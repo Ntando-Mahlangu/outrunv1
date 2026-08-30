@@ -79,7 +79,7 @@ export default async function CampaignDetailPage({
       </div>
 
       {campaign.strategyRationale && (
-        <Card>
+        <Card interactive>
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-medium text-[var(--color-text-primary)]">
               AI Campaign Strategy

@@ -29,7 +29,7 @@ export function ImprovementLoopPanel({ initialResult }: { initialResult: Improve
   }
 
   return (
-    <Card>
+    <Card interactive>
       <h2 className="text-lg font-medium text-[var(--color-text-primary)]">
         AI Improvement Loop
       </h2>

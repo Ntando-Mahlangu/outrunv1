@@ -99,7 +99,7 @@ export function LeadListsPageClient({ initialLists }: { initialLists: LeadListSu
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {lists.map((list) => (
-            <Card key={list.id} className="animate-fade-in">
+            <Card key={list.id} interactive className="animate-fade-in">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="font-medium text-[var(--color-text-primary)]">{list.name}</p>

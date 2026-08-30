@@ -64,7 +64,7 @@ export function ReviewsPageClient({ initialReviews }: { initialReviews: Strategi
         </Link>
       </div>
 
-      <Card>
+      <Card interactive>
         <h2 className="mb-3 text-sm font-medium text-[var(--color-text-primary)]">
           Generate a review now
         </h2>
@@ -92,7 +92,7 @@ export function ReviewsPageClient({ initialReviews }: { initialReviews: Strategi
         <div className="space-y-3">
           {reviews.map((review) => (
             <Link key={review.id} href={`/growth-partner/reviews/${review.id}`}>
-              <Card className="transition-colors hover:border-[var(--color-accent)]/40">
+              <Card interactive>
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2">
