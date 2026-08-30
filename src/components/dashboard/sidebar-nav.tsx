@@ -18,8 +18,6 @@ const NAV_ITEMS = [
   { href: "/growth-partner", label: "Growth Partner" },
   { href: "/memory", label: "AI Memory" },
   { href: "/settings/team", label: "Team" },
-  { href: "/settings/brand-voice", label: "Brand Voice" },
-  { href: "/billing", label: "Billing" },
 ];
 
 // Grouped separately under a "Settings" label rather than flattened in with
@@ -29,6 +27,8 @@ const SETTINGS_NAV_ITEMS = [
   { href: "/settings/security", label: "Security" },
   { href: "/settings/webhooks", label: "Webhooks" },
   { href: "/settings/api-keys", label: "API Keys" },
+  { href: "/settings/brand-voice", label: "Brand Voice" },
+  { href: "/billing", label: "Billing" },
 ];
 
 function NavLink({ href, label, pathname }: { href: string; label: string; pathname: string }) {
