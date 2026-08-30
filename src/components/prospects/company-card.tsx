@@ -32,7 +32,7 @@ export function CompanyCard({
   }
 
   return (
-    <Card className="animate-fade-in">
+    <Card interactive className="animate-fade-in">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-2">
           {onToggleSelect && (
