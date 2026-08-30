@@ -106,8 +106,6 @@ export default async function DashboardPage() {
       take: 6,
     }),
   ]);
-  const healthTrendLabel = health ? formatTrend(health.overallTrend) : null;
-
   const firstName = session.user.name.split(" ")[0] ?? session.user.name;
   const today = new Date();
 
@@ -180,22 +178,12 @@ export default async function DashboardPage() {
               <EvidenceToggle reason={mission.reason} />
             </div>
 
-            <div className="mt-5 grid grid-cols-2 gap-4 border-t border-[var(--color-border)] pt-5 sm:grid-cols-4">
-              {health && (
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
-                    Business Health
-                  </p>
-                  <p className="text-2xl font-light text-[var(--color-text-primary)]">
-                    <CountUp value={health.overall} suffix="/100" />
-                    {healthTrendLabel && (
-                      <span className="ml-1 text-xs text-[var(--color-text-muted)]">
-                        ({healthTrendLabel})
-                      </span>
-                    )}
-                  </p>
-                </div>
-              )}
+            {/* Business Health has its own full breakdown one card below
+                (the Business Health Score card) — repeating just the
+                overall number here was the same fact twice, one card
+                apart, so this row only carries what's unique to Today's
+                Priority. */}
+            <div className="mt-5 grid grid-cols-1 gap-4 border-t border-[var(--color-border)] pt-5 sm:grid-cols-3">
               <div>
                 <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
                   New Opportunities
@@ -235,6 +223,25 @@ export default async function DashboardPage() {
           </Card>
           </RevealItem>
         )}
+
+        <RevealItem>
+        <Card interactive>
+          <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
+            Quick Actions
+          </h2>
+          <div className="flex flex-wrap gap-3">
+            {quickActions(Boolean(blueprint)).map((action) => (
+              <Link
+                key={action.href}
+                href={action.href}
+                className={cn(buttonVariants({ variant: "secondary" }))}
+              >
+                {action.label}
+              </Link>
+            ))}
+          </div>
+        </Card>
+        </RevealItem>
 
         <RevealItem className="grid gap-6 lg:grid-cols-[auto_1fr]">
           <Card interactive className="flex flex-col items-center justify-center">
@@ -607,24 +614,6 @@ export default async function DashboardPage() {
         </Card>
         </RevealItem>
 
-        <RevealItem>
-        <Card interactive>
-          <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
-            Quick Actions
-          </h2>
-          <div className="flex flex-wrap gap-3">
-            {quickActions(Boolean(blueprint)).map((action) => (
-              <Link
-                key={action.href}
-                href={action.href}
-                className={cn(buttonVariants({ variant: "secondary" }))}
-              >
-                {action.label}
-              </Link>
-            ))}
-          </div>
-        </Card>
-        </RevealItem>
       </RevealGroup>
 
       <RightSidebar
