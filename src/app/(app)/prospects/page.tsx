@@ -110,7 +110,7 @@ export default function ProspectsPage() {
   }
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="animate-fade-in space-y-5">
       <div className="flex items-start justify-between gap-4">
         <div>
           <SplitHeading
@@ -255,7 +255,7 @@ export default function ProspectsPage() {
               No results match these filters.
             </p>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {filteredCompanies?.map((company) => (
                 <CompanyCard
                   key={company.id}

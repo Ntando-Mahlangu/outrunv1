@@ -32,7 +32,7 @@ export function CompanyCard({
   }
 
   return (
-    <Card className="animate-fade-in">
+    <Card className="animate-fade-in p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-2">
           {onToggleSelect && (
@@ -54,7 +54,7 @@ export function CompanyCard({
         </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-2.5 flex flex-wrap gap-2">
         <ScoreBadge label="Fit" score={company.fitScore ?? 0} reason={company.fitReason} />
         <ScoreBadge
           label="Confidence"
@@ -64,12 +64,12 @@ export function CompanyCard({
       </div>
 
       {company.rating != null && (
-        <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+        <p className="mt-1.5 text-xs text-[var(--color-text-muted)]">
           {company.rating}★ · {company.reviewCount ?? 0} reviews
         </p>
       )}
 
-      <div className="mt-4 flex gap-2">
+      <div className="mt-3 flex gap-2">
         <Link
           href={`/prospects/${company.id}`}
           className="text-sm text-[var(--color-accent-text)] hover:underline"
