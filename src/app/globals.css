@@ -40,8 +40,11 @@
      token addition. */
   --color-accent-text: #a78bfa;
 
-  --font-sans: "Outrun Sans", -apple-system, BlinkMacSystemFont, "Segoe UI",
-    Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-sans: var(--next-font-sans), -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--next-font-display), var(--font-sans);
+  --font-mono: var(--next-font-mono), ui-monospace, "SF Mono", Menlo,
+    monospace;
 
   --radius-md: 0.625rem;
   --radius-lg: 0.875rem;
@@ -110,6 +113,14 @@
     font-family: var(--font-sans);
     font-weight: 300;
     -webkit-font-smoothing: antialiased;
+  }
+
+  /* Every heading gets the display face app-wide, with zero per-component
+     changes — the same lever as --font-sans above, just scoped to h1-h3. */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
   }
 
   @media (prefers-reduced-motion: reduce) {
