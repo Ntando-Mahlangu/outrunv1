@@ -18,7 +18,7 @@ export default async function BlueprintHistoryPage() {
   if (history.length === 0) redirect("/blueprint");
 
   return (
-    <main className="min-h-screen bg-[var(--color-bg-primary)] px-4 py-16">
+    <div className="py-16">
       <div className="mx-auto max-w-3xl space-y-6">
         <div>
           <Link href="/blueprint" className="text-sm text-[var(--color-accent-text)] hover:underline">
@@ -106,6 +106,6 @@ export default async function BlueprintHistoryPage() {
           );
         })}
       </div>
-    </main>
+    </div>
   );
 }

@@ -24,7 +24,7 @@ export default async function BlueprintHistoryVersionPage({
   if (!blueprint) notFound();
 
   return (
-    <main className="min-h-screen bg-[var(--color-bg-primary)] px-4 py-16">
+    <div className="py-16">
       <div className="mx-auto max-w-4xl space-y-4">
         <Link
           href="/blueprint/history"
@@ -59,6 +59,6 @@ export default async function BlueprintHistoryVersionPage({
           }}
         />
       </div>
-    </main>
+    </div>
   );
 }

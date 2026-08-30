@@ -44,14 +44,12 @@ export default async function BlueprintPage({
       getRecentFailedBlueprintJob(organization.id),
     ]);
     return (
-      <main className="min-h-screen bg-[var(--color-bg-primary)] px-4 py-16">
-        <div className="mx-auto max-w-md">
-          <BlueprintPending
-            hasInFlightJob={Boolean(inFlightJob)}
-            lastFailedError={lastFailedJob?.errorMessage}
-          />
-        </div>
-      </main>
+      <div className="mx-auto max-w-md py-16">
+        <BlueprintPending
+          hasInFlightJob={Boolean(inFlightJob)}
+          lastFailedError={lastFailedJob?.errorMessage}
+        />
+      </div>
     );
   }
 
@@ -90,7 +88,7 @@ export default async function BlueprintPage({
   }
 
   return (
-    <main className="min-h-screen bg-[var(--color-bg-primary)] px-4 py-16 print:bg-white print:px-0 print:py-0">
+    <div className="py-16 print:bg-white print:py-0">
       <div className="mx-auto max-w-4xl space-y-8">
         {blueprintLimitReached === "1" && (
           <div className="rounded-[var(--radius-md)] border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 p-4 text-sm text-[var(--color-text-secondary)] print:hidden">
@@ -154,6 +152,6 @@ export default async function BlueprintPage({
           </div>
         )}
       </div>
-    </main>
+    </div>
   );
 }

@@ -34,11 +34,11 @@ export default async function DashboardLayout({
     : [];
 
   return (
-    <div className="relative min-h-screen bg-[var(--color-bg-primary)]">
-      <div className="pointer-events-none fixed inset-0 z-0 opacity-40">
+    <div className="relative min-h-screen bg-[var(--color-bg-primary)] print:bg-white">
+      <div className="pointer-events-none fixed inset-0 z-0 opacity-40 print:hidden">
         <GenerativeLattice />
       </div>
-      <header className="relative z-10 flex h-16 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-bg-primary)] px-6">
+      <header className="relative z-10 flex h-16 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-bg-primary)] px-6 print:hidden">
         <Logo />
         <div className="flex items-center gap-4">
           {organization && <GlobalSearch />}
@@ -56,15 +56,19 @@ export default async function DashboardLayout({
         </div>
       </header>
 
-      <div className="relative z-10 mx-auto flex max-w-6xl gap-8 px-6 py-8">
-        <aside className="hidden w-56 shrink-0 space-y-6 sm:block">
+      {/* docs/outrun/05 Growth Blueprint export prints/PDFs this main
+          column — print:block/max-w-none/p-0 drop the sidebar's layout
+          constraints so the exported document isn't squeezed into the
+          in-app content width. */}
+      <div className="relative z-10 mx-auto flex max-w-6xl gap-8 px-6 py-8 print:block print:max-w-none print:gap-0 print:p-0">
+        <aside className="hidden w-56 shrink-0 space-y-6 sm:block print:hidden">
           <SidebarNav />
           <div className="border-t border-[var(--color-border)] pt-4">
             <SignOutButton />
           </div>
         </aside>
 
-        <main className="min-w-0 flex-1">{children}</main>
+        <main className="min-w-0 flex-1 print:w-full">{children}</main>
       </div>
     </div>
   );
