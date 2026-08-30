@@ -149,7 +149,7 @@ export default async function DashboardPage() {
 
         {mission && (
           <RevealItem>
-          <Card className="border-[var(--color-accent)]/40">
+          <Card interactive className="border-[var(--color-accent)]/40">
             <p className="text-xs uppercase tracking-wide text-[var(--color-accent-text)]">
               Today&apos;s Priority
             </p>
@@ -237,7 +237,7 @@ export default async function DashboardPage() {
         )}
 
         <RevealItem className="grid gap-6 lg:grid-cols-[auto_1fr]">
-          <Card className="flex flex-col items-center justify-center">
+          <Card interactive className="flex flex-col items-center justify-center">
             {blueprint ? (
               <ScoreGauge score={blueprint.growthScore} label="Growth Score" />
             ) : (
@@ -255,7 +255,7 @@ export default async function DashboardPage() {
             )}
           </Card>
 
-          <Card>
+          <Card interactive>
             <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
               Business Health Score
             </h2>
@@ -303,7 +303,7 @@ export default async function DashboardPage() {
         </RevealItem>
 
         <RevealItem>
-        <Card>
+        <Card interactive>
           <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
             Business Snapshot
           </h2>
@@ -424,7 +424,7 @@ export default async function DashboardPage() {
         </RevealItem>
 
         <RevealItem>
-        <Card>
+        <Card interactive>
           <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
             Goals &amp; Tasks
           </h2>
@@ -537,7 +537,7 @@ export default async function DashboardPage() {
 
         {blueprint && (
           <RevealItem>
-          <Card>
+          <Card interactive>
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-medium text-[var(--color-text-primary)]">
                 AI Opportunities
@@ -574,7 +574,7 @@ export default async function DashboardPage() {
         </RevealItem>
 
         <RevealItem>
-        <Card>
+        <Card interactive>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-medium text-[var(--color-text-primary)]">
               Recent Activity
@@ -608,7 +608,7 @@ export default async function DashboardPage() {
         </RevealItem>
 
         <RevealItem>
-        <Card>
+        <Card interactive>
           <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
             Quick Actions
           </h2>

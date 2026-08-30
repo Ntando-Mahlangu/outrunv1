@@ -27,7 +27,7 @@ export function RightSidebar({
 }) {
   return (
     <aside className="hidden w-80 shrink-0 space-y-6 xl:block">
-      <Card>
+      <Card interactive>
         <h2 className="text-sm font-medium text-[var(--color-text-primary)]">AI Assistant</h2>
         <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
           {assistantTeaser ?? "Ask your Growth Partner anything about your business."}
@@ -40,7 +40,7 @@ export function RightSidebar({
         </Link>
       </Card>
 
-      <Card>
+      <Card interactive>
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-medium text-[var(--color-text-primary)]">
             Recent Notifications
@@ -66,7 +66,7 @@ export function RightSidebar({
         )}
       </Card>
 
-      <Card>
+      <Card interactive>
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-medium text-[var(--color-text-primary)]">Upcoming Tasks</h2>
           <Link href="/tasks" className="text-xs text-[var(--color-accent-text)] hover:underline">
@@ -92,7 +92,7 @@ export function RightSidebar({
       </Card>
 
       {growthTip && (
-        <Card>
+        <Card interactive>
           <h2 className="text-sm font-medium text-[var(--color-text-primary)]">Growth Tip</h2>
           <p className="mt-1 text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
             {growthTip.category}

@@ -24,7 +24,7 @@ export function CampaignOverviewWidget({ overview }: { overview: CampaignOvervie
     overview.runningCount + overview.draftCount + overview.pausedCount + overview.completedCount > 0;
 
   return (
-    <Card>
+    <Card interactive>
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-medium text-[var(--color-text-primary)]">Campaign Overview</h2>
         <Link href="/campaigns" className="text-sm text-[var(--color-accent-text)] hover:underline">
