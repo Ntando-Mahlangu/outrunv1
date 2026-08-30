@@ -3,14 +3,12 @@ import Link from "next/link";
 import { getCurrentSession } from "@/lib/session";
 import { getCurrentOrganization } from "@/lib/org";
 import { findLatestForOrg } from "@/lib/repositories/growth-blueprint-repository";
-import { BlueprintPending } from "@/components/dashboard/blueprint-pending";
 import { getTodaysMission, getMissionActionHref } from "@/lib/dashboard/mission";
 import { getBusinessHealth, type HealthCategory } from "@/lib/growth-partner/health";
 import { getBiggestWinThisWeek } from "@/lib/growth-partner/weekly-win";
 import { getRisksAndOpportunities } from "@/lib/growth-partner/risks";
 import { getBusinessSnapshot } from "@/lib/dashboard/business-snapshot";
 import { getGoalsTasksSummary } from "@/lib/dashboard/goals-tasks-summary";
-import { getInFlightBlueprintJob, getRecentFailedBlueprintJob } from "@/lib/dashboard/blueprint-job-status";
 import { getCampaignOverview } from "@/lib/dashboard/campaign-overview";
 import { getGrowthStreaks } from "@/lib/dashboard/streaks";
 import { getUpcomingTasks, getRecentNotifications } from "@/lib/dashboard/right-sidebar-data";
@@ -74,12 +72,6 @@ export default async function DashboardPage() {
   // Today's Priority would otherwise occupy, and the rest of the
   // dashboard is real from the first login.
   const blueprint = await findLatestForOrg(organization.id);
-  const [inFlightJob, lastFailedJob] = blueprint
-    ? [null, null]
-    : await Promise.all([
-        getInFlightBlueprintJob(organization.id),
-        getRecentFailedBlueprintJob(organization.id),
-      ]);
 
   const mission = blueprint ? getTodaysMission(blueprint) : null;
   const allOpportunities = blueprint
@@ -154,15 +146,6 @@ export default async function DashboardPage() {
             </p>
           )}
         </RevealItem>
-
-        {!blueprint && (
-          <RevealItem>
-            <BlueprintPending
-              hasInFlightJob={Boolean(inFlightJob)}
-              lastFailedError={lastFailedJob?.errorMessage}
-            />
-          </RevealItem>
-        )}
 
         {mission && (
           <RevealItem>
@@ -253,18 +236,32 @@ export default async function DashboardPage() {
           </RevealItem>
         )}
 
-        {blueprint && (
-          <RevealItem className="grid gap-6 lg:grid-cols-[auto_1fr]">
-            <Card className="flex flex-col items-center justify-center">
+        <RevealItem className="grid gap-6 lg:grid-cols-[auto_1fr]">
+          <Card className="flex flex-col items-center justify-center">
+            {blueprint ? (
               <ScoreGauge score={blueprint.growthScore} label="Growth Score" />
-            </Card>
+            ) : (
+              <div className="flex flex-col items-center gap-3 text-center">
+                <div className="flex size-44 items-center justify-center rounded-full border-2 border-dashed border-[var(--color-border)]">
+                  <span className="px-4 text-sm text-[var(--color-text-muted)]">
+                    Not yet calculated
+                  </span>
+                </div>
+                <p className="text-sm font-medium text-[var(--color-text-secondary)]">Growth Score</p>
+                <Link href="/blueprint" className="text-xs text-[var(--color-accent-text)] hover:underline">
+                  Generate your Growth Blueprint →
+                </Link>
+              </div>
+            )}
+          </Card>
 
-            <Card>
-              <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
-                Business Health Score
-              </h2>
+          <Card>
+            <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
+              Business Health Score
+            </h2>
+            {health ? (
               <div className="grid gap-4 sm:grid-cols-2">
-                {health?.categories.map((c) => {
+                {health.categories.map((c) => {
                   const trendLabel = formatTrend(c.trend);
                   return (
                     <div
@@ -297,9 +294,13 @@ export default async function DashboardPage() {
                   );
                 })}
               </div>
-            </Card>
-          </RevealItem>
-        )}
+            ) : (
+              <p className="text-sm text-[var(--color-text-muted)]">
+                Generate your Growth Blueprint to see a category-by-category health breakdown here.
+              </p>
+            )}
+          </Card>
+        </RevealItem>
 
         <RevealItem>
         <Card>

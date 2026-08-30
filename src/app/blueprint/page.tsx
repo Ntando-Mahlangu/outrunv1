@@ -7,8 +7,10 @@ import { cn } from "@/lib/cn";
 import Link from "next/link";
 import { BlueprintView } from "@/components/growth-blueprint/blueprint-view";
 import { BlueprintActions } from "@/components/growth-blueprint/blueprint-actions";
+import { BlueprintPending } from "@/components/dashboard/blueprint-pending";
 import { SecondWowSection } from "@/components/growth-blueprint/second-wow-section";
 import { isFeatureEnabled, FEATURE_FLAGS } from "@/lib/billing/feature-flags";
+import { getInFlightBlueprintJob, getRecentFailedBlueprintJob } from "@/lib/dashboard/blueprint-job-status";
 import * as companyRepository from "@/lib/repositories/company-repository";
 import type { BusinessSnapshot, GrowthBlueprintData, WebsiteAnalysis } from "@/lib/growth-blueprint/schema";
 
@@ -33,11 +35,25 @@ export default async function BlueprintPage({
     prisma.growthBlueprint.count({ where: { organizationId: organization.id } }),
   ]);
 
-  // Dashboard's own empty state (src/app/(app)/dashboard/page.tsx) handles
-  // "no Blueprint yet" gracefully — kicking off generation or showing
-  // progress — without ever dead-ending the user, so it's the fallback
-  // here too rather than a dedicated generating page.
-  if (!blueprint) redirect("/dashboard");
+  // Shows its own generate/pending state directly, rather than bouncing to
+  // Dashboard — landing here from the sidebar with no Blueprint yet used to
+  // silently redirect away, which read as "this link is broken."
+  if (!blueprint) {
+    const [inFlightJob, lastFailedJob] = await Promise.all([
+      getInFlightBlueprintJob(organization.id),
+      getRecentFailedBlueprintJob(organization.id),
+    ]);
+    return (
+      <main className="min-h-screen bg-[var(--color-bg-primary)] px-4 py-16">
+        <div className="mx-auto max-w-md">
+          <BlueprintPending
+            hasInFlightJob={Boolean(inFlightJob)}
+            lastFailedError={lastFailedJob?.errorMessage}
+          />
+        </div>
+      </main>
+    );
+  }
 
   // docs/outrun/03 "SECOND WOW MOMENT" — only ever shown next to the very
   // first Blueprint (src/lib/jobs/queue.ts only chains
