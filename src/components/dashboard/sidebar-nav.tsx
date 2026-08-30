@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { cn } from "@/lib/cn";
 
 // docs/outrun/04 "Left Sidebar" lists many future sections (Prospects,
@@ -50,6 +51,7 @@ function NavLink({ href, label, pathname }: { href: string; label: string; pathn
 
 export function SidebarNav() {
   const pathname = usePathname();
+  const [settingsOpen, setSettingsOpen] = useState(true);
 
   return (
     <nav className="space-y-6">
@@ -60,12 +62,35 @@ export function SidebarNav() {
       </div>
 
       <div className="space-y-1">
-        <p className="px-4 text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
+        <button
+          type="button"
+          onClick={() => setSettingsOpen((open) => !open)}
+          aria-expanded={settingsOpen}
+          className="flex w-full items-center justify-between rounded-[var(--radius-md)] px-4 py-1 text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text-secondary)]"
+        >
           Settings
-        </p>
-        {SETTINGS_NAV_ITEMS.map((item) => (
-          <NavLink key={item.href} {...item} pathname={pathname} />
-        ))}
+          <svg
+            viewBox="0 0 24 24"
+            className={cn("size-3.5 transition-transform duration-150", settingsOpen && "rotate-180")}
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M6 9l6 6 6-6"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+        {settingsOpen && (
+          <div className="space-y-1">
+            {SETTINGS_NAV_ITEMS.map((item) => (
+              <NavLink key={item.href} {...item} pathname={pathname} />
+            ))}
+          </div>
+        )}
       </div>
     </nav>
   );
