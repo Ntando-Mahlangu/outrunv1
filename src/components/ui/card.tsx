@@ -13,7 +13,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-card)] p-8 shadow-[0_1px_2px_rgba(0,0,0,0.3)]",
+        "rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-card)] p-5 shadow-[0_1px_2px_rgba(0,0,0,0.3)]",
         interactive &&
           "transition-all duration-300 hover:-translate-y-1 hover:border-[var(--color-accent)]/50 hover:shadow-[var(--shadow-glow)]",
         className,
