@@ -51,7 +51,7 @@ function NavLink({ href, label, pathname }: { href: string; label: string; pathn
 
 export function SidebarNav() {
   const pathname = usePathname();
-  const [settingsOpen, setSettingsOpen] = useState(true);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
     <nav className="space-y-6">
