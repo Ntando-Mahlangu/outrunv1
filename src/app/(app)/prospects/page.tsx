@@ -14,6 +14,7 @@ import {
   type ProspectFilters,
 } from "@/components/prospects/filter-bar";
 import { BulkActionsBar } from "@/components/prospects/bulk-actions-bar";
+import { ColdCallingMode } from "@/components/prospects/cold-calling-mode";
 import { SplitHeading } from "@/components/motion/split-heading";
 import { Magnetic } from "@/components/motion/magnetic";
 
@@ -35,6 +36,7 @@ export default function ProspectsPage() {
   );
   const [filters, setFilters] = useState<ProspectFilters>(DEFAULT_PROSPECT_FILTERS);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isCalling, setIsCalling] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const categories = useMemo(
@@ -250,6 +252,14 @@ export default function ProspectsPage() {
             onClearSelection={() => setSelectedIds(new Set())}
           />
 
+          {filteredCompanies && filteredCompanies.length > 0 && (
+            <div className="flex justify-end">
+              <Button type="button" variant="secondary" onClick={() => setIsCalling(true)}>
+                Start Calling
+              </Button>
+            </div>
+          )}
+
           {filteredCompanies && filteredCompanies.length === 0 ? (
             <p className="text-sm text-[var(--color-text-muted)]">
               No results match these filters.
@@ -267,6 +277,10 @@ export default function ProspectsPage() {
             </div>
           )}
         </>
+      )}
+
+      {isCalling && filteredCompanies && filteredCompanies.length > 0 && (
+        <ColdCallingMode companies={filteredCompanies} onClose={() => setIsCalling(false)} />
       )}
     </div>
   );
