@@ -114,7 +114,14 @@ export async function deleteLeadList(organizationId: string, leadListId: string)
 export async function getLeadListWithCompanies(organizationId: string, leadListId: string) {
   const list = await prisma.leadList.findFirst({
     where: { id: leadListId, organizationId },
-    include: { companies: { include: { company: true }, orderBy: { addedAt: "desc" } } },
+    include: {
+      companies: {
+        include: {
+          company: { include: { _count: { select: { callLogs: true } } } },
+        },
+        orderBy: { addedAt: "desc" },
+      },
+    },
   });
   if (!list) {
     throw new UserFacingError("That list could not be found.");

@@ -16,16 +16,22 @@ import {
   type ProspectFilters,
 } from "@/components/prospects/filter-bar";
 import { BulkActionsBar } from "@/components/prospects/bulk-actions-bar";
+import { ColdCallingMode } from "@/components/prospects/cold-calling-mode";
 import { CountUp } from "@/components/motion/count-up";
 
 export function LeadListDetailClient({
   listId,
   initialName,
   initialCompanies,
+  calledCompanyIds,
 }: {
   listId: string;
   initialName: string;
   initialCompanies: Company[];
+  // Companies in this list that already have at least one logged call
+  // (docs/07 "COLD CALL SCRIPT") — used to resume a calling session on
+  // just what's left, rather than starting back at the top of the list.
+  calledCompanyIds: string[];
 }) {
   const router = useRouter();
   const [name, setName] = useState(initialName);
@@ -37,6 +43,8 @@ export function LeadListDetailClient({
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<ProspectFilters>(DEFAULT_PROSPECT_FILTERS);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [calledIds] = useState(() => new Set(calledCompanyIds));
+  const [isCalling, setIsCalling] = useState(false);
 
   const categories = useMemo(
     () => Array.from(new Set(companies.map((c) => c.category).filter((c): c is string => Boolean(c)))).sort(),
@@ -46,6 +54,16 @@ export function LeadListDetailClient({
     () => applyProspectFilters(companies, filters),
     [companies, filters],
   );
+
+  // Resume where a previous calling session left off: default the queue to
+  // whatever hasn't been called yet, and only fall back to everyone once
+  // there's genuinely nothing left to resume to.
+  const uncalledCompanies = useMemo(
+    () => filteredCompanies.filter((c) => !calledIds.has(c.id)),
+    [filteredCompanies, calledIds],
+  );
+  const callQueue = uncalledCompanies.length > 0 ? uncalledCompanies : filteredCompanies;
+  const isResuming = uncalledCompanies.length > 0 && uncalledCompanies.length < filteredCompanies.length;
 
   function toggleSelect(id: string) {
     setSelectedIds((prev) => {
@@ -176,6 +194,20 @@ export function LeadListDetailClient({
             removeLabel="Remove from this list"
           />
 
+          {filteredCompanies.length > 0 && (
+            <div className="flex items-center justify-end gap-3">
+              {isResuming && (
+                <span className="text-xs text-[var(--color-text-muted)]">
+                  {uncalledCompanies.length} left to call · {filteredCompanies.length - uncalledCompanies.length}{" "}
+                  already called
+                </span>
+              )}
+              <Button type="button" variant="secondary" onClick={() => setIsCalling(true)}>
+                {isResuming ? "Resume Calling" : uncalledCompanies.length === 0 ? "Call Again" : "Start Calling"}
+              </Button>
+            </div>
+          )}
+
           {filteredCompanies.length === 0 ? (
             <p className="text-sm text-[var(--color-text-muted)]">
               No results match these filters.
@@ -231,6 +263,10 @@ export function LeadListDetailClient({
             </div>
           )}
         </>
+      )}
+
+      {isCalling && callQueue.length > 0 && (
+        <ColdCallingMode companies={callQueue} onClose={() => setIsCalling(false)} />
       )}
     </div>
   );

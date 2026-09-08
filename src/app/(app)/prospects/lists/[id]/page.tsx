@@ -31,6 +31,9 @@ export default async function LeadListDetailPage({
       listId={list.id}
       initialName={list.name}
       initialCompanies={list.companies.map((entry) => entry.company)}
+      calledCompanyIds={list.companies
+        .filter((entry) => entry.company._count.callLogs > 0)
+        .map((entry) => entry.companyId)}
     />
   );
 }
