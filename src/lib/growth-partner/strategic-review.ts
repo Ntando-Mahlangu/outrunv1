@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import type { ReviewPeriod } from "@prisma/client";
 import { getAIProvider } from "@/lib/ai";
 import { getBusinessContext, formatBusinessContext } from "@/lib/memory/context";
+import { getCallActivitySummary } from "@/lib/prospects/call-insights";
 import { getRisksAndOpportunities } from "./risks";
 import { UserFacingError } from "@/lib/errors";
 import { logEvent, EventType } from "@/lib/memory/log-event";
@@ -31,29 +32,38 @@ function periodWindow(period: ReviewPeriod, now: Date = new Date()) {
  * overall context, never over anything it has to guess at.
  */
 async function buildPeriodSummary(organizationId: string, periodStart: Date, periodEnd: Date) {
-  const [events, blueprintAtStart, blueprintAtEnd, sentMessages, currentSignals] = await Promise.all([
-    prisma.event.findMany({
-      where: { organizationId, createdAt: { gte: periodStart, lt: periodEnd } },
-      orderBy: { createdAt: "asc" },
-    }),
-    prisma.growthBlueprint.findFirst({
-      where: { organizationId, createdAt: { lt: periodStart } },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.growthBlueprint.findFirst({
-      where: { organizationId, createdAt: { lt: periodEnd } },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.outreachMessage.findMany({
-      where: {
-        company: { organizationId },
-        sendStatus: "SENT",
-        sentAt: { gte: periodStart, lt: periodEnd },
-      },
-      select: { gotReply: true },
-    }),
-    getRisksAndOpportunities(organizationId),
-  ]);
+  // Same-length prior window, purely to give the calling stat below a real
+  // computed trend instead of leaving the AI to guess at one — mirrors how
+  // the Growth Score comparison above already reasons over a known
+  // earlier/later pair rather than a single snapshot.
+  const priorPeriodStart = new Date(periodStart.getTime() - (periodEnd.getTime() - periodStart.getTime()));
+
+  const [events, blueprintAtStart, blueprintAtEnd, sentMessages, currentSignals, callActivity, priorCallActivity] =
+    await Promise.all([
+      prisma.event.findMany({
+        where: { organizationId, createdAt: { gte: periodStart, lt: periodEnd } },
+        orderBy: { createdAt: "asc" },
+      }),
+      prisma.growthBlueprint.findFirst({
+        where: { organizationId, createdAt: { lt: periodStart } },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.growthBlueprint.findFirst({
+        where: { organizationId, createdAt: { lt: periodEnd } },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.outreachMessage.findMany({
+        where: {
+          company: { organizationId },
+          sendStatus: "SENT",
+          sentAt: { gte: periodStart, lt: periodEnd },
+        },
+        select: { gotReply: true },
+      }),
+      getRisksAndOpportunities(organizationId),
+      getCallActivitySummary(organizationId, periodStart, periodEnd),
+      getCallActivitySummary(organizationId, priorPeriodStart, periodStart),
+    ]);
 
   const lines: string[] = [];
   lines.push(`Period: ${periodStart.toDateString()} to ${periodEnd.toDateString()}`);
@@ -77,6 +87,21 @@ async function buildPeriodSummary(organizationId: string, periodStart: Date, per
   lines.push(
     `Outreach sent in this period: ${sentMessages.length}, replies: ${sentMessages.filter((m) => m.gotReply).length}.`,
   );
+
+  if (callActivity.total > 0) {
+    const rate = Math.round((callActivity.positiveRate ?? 0) * 100);
+    let trend = "";
+    if (priorCallActivity.total > 0 && priorCallActivity.positiveRate !== null) {
+      const priorRate = Math.round(priorCallActivity.positiveRate * 100);
+      const delta = rate - priorRate;
+      trend = ` (${delta >= 0 ? "+" : ""}${delta}pp vs ${priorRate}% the previous period)`;
+    }
+    lines.push(
+      `Calls logged in this period: ${callActivity.total}, of which ${callActivity.positive} led to a real conversation or a next step (${rate}% positive-outcome rate${trend}).`,
+    );
+  } else {
+    lines.push("No calls logged in this period.");
+  }
 
   if (currentSignals.length > 0) {
     lines.push("Risks/gaps observed as of this review:");

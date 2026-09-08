@@ -15,6 +15,7 @@ import {
 } from "@/components/prospects/filter-bar";
 import { BulkActionsBar } from "@/components/prospects/bulk-actions-bar";
 import { ColdCallingMode } from "@/components/prospects/cold-calling-mode";
+import { CallInsightsPanel } from "@/components/prospects/call-insights-panel";
 import { SplitHeading } from "@/components/motion/split-heading";
 import { Magnetic } from "@/components/motion/magnetic";
 
@@ -278,6 +279,8 @@ export default function ProspectsPage() {
           )}
         </>
       )}
+
+      <CallInsightsPanel />
 
       {isCalling && filteredCompanies && filteredCompanies.length > 0 && (
         <ColdCallingMode companies={filteredCompanies} onClose={() => setIsCalling(false)} />

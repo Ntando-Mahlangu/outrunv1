@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { EventType } from "@prisma/client";
+import { EventType, type TaskImpact } from "@prisma/client";
 import { getCurrentSession } from "@/lib/session";
 import { getCurrentOrganization } from "@/lib/org";
 import { prisma } from "@/lib/prisma";
@@ -10,6 +10,15 @@ import { captureError } from "@/lib/observability";
 import { parseJsonBody } from "@/lib/validate-request";
 
 const GENERIC_ERROR = "We couldn't do that right now. Please try again in a moment.";
+
+const FOLLOW_UP_DUE_DAYS = 2;
+
+function followUpImpact(fitScore: number | null): TaskImpact {
+  if (fitScore == null) return "Medium";
+  if (fitScore >= 70) return "High";
+  if (fitScore >= 40) return "Medium";
+  return "Low";
+}
 
 const OUTCOME_LABEL: Record<string, string> = {
   ANSWERED: "answered",
@@ -80,6 +89,28 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       EventType.CALL_LOGGED,
       `Call with ${company.name} ${OUTCOME_LABEL[outcome]}.`,
     );
+
+    // A callback request (whether logged as "Meeting Booked" or a plain
+    // callback from any other call-logging entry point) means someone
+    // needs to actually follow up — otherwise it's a fact recorded once
+    // and never revisited. Impact mirrors the company's own Fit Score
+    // (docs/06 "FIT SCORE") rather than defaulting every follow-up to the
+    // same weight regardless of how good a prospect it actually is.
+    if (outcome === "CALLBACK_REQUESTED") {
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + FOLLOW_UP_DUE_DAYS);
+      await prisma.task.create({
+        data: {
+          organizationId: organization.id,
+          title: `Follow up with ${company.name}`,
+          description: notes
+            ? `Logged from a call on ${callLog.createdAt.toLocaleDateString()}: ${notes}`
+            : `${company.name} asked for a callback on ${callLog.createdAt.toLocaleDateString()}.`,
+          impact: followUpImpact(company.fitScore),
+          dueDate,
+        },
+      });
+    }
 
     return NextResponse.json({ callLog });
   } catch (error) {
