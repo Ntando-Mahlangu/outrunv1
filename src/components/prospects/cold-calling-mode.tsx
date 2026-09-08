@@ -148,13 +148,24 @@ export function ColdCallingMode({
         <span className="font-mono text-xs uppercase tracking-[0.15em] text-[var(--color-text-muted)]">
           {done ? "Session complete" : `${index + 1} of ${companies.length}`}
         </span>
-        <button
-          type="button"
-          onClick={onClose}
-          className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-        >
-          Close ✕
-        </button>
+        <div className="flex items-center gap-4">
+          {!done && (
+            <button
+              type="button"
+              onClick={() => goTo(companies.length, 1)}
+              className="text-sm text-[var(--color-accent-text)] hover:underline"
+            >
+              Done for now
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+          >
+            Close ✕
+          </button>
+        </div>
       </div>
 
       {!done && (
