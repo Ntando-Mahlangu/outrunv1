@@ -20,7 +20,7 @@ function listTitles(titles: string[]): string {
  * honestly rather than inventing a placeholder.
  */
 export async function getPriorRecommendationOutcomes(organizationId: string): Promise<string | null> {
-  const [tasks, feedback] = await Promise.all([
+  const [tasks, feedback, opportunities] = await Promise.all([
     prisma.task.findMany({
       where: { organizationId, sourceBlueprintVersion: { not: null } },
       select: { title: true, status: true, completionNotes: true },
@@ -29,9 +29,13 @@ export async function getPriorRecommendationOutcomes(organizationId: string): Pr
       where: { organizationId, rating: { in: ["NOT_HELPFUL", "DISMISSED"] } },
       select: { itemTitle: true, rating: true },
     }),
+    prisma.opportunity.findMany({
+      where: { organizationId, status: { in: ["LAUNCHED", "DISMISSED"] } },
+      select: { title: true, status: true },
+    }),
   ]);
 
-  if (tasks.length === 0 && feedback.length === 0) return null;
+  if (tasks.length === 0 && feedback.length === 0 && opportunities.length === 0) return null;
 
   const lines: string[] = [];
 
@@ -70,6 +74,19 @@ export async function getPriorRecommendationOutcomes(organizationId: string): Pr
     }
     if (dismissedItems.length > 0) {
       lines.push(`Dismissed from the Opportunity Feed: ${listTitles(dismissedItems.map((f) => f.itemTitle))}.`);
+    }
+  }
+
+  if (opportunities.length > 0) {
+    const launched = opportunities.filter((o) => o.status === "LAUNCHED");
+    const dismissed = opportunities.filter((o) => o.status === "DISMISSED");
+    if (launched.length > 0) {
+      lines.push(`Acted on from the Opportunity Engine: ${listTitles(launched.map((o) => o.title))}.`);
+    }
+    if (dismissed.length > 0) {
+      lines.push(
+        `Dismissed from the Opportunity Engine (avoid repeating these): ${listTitles(dismissed.map((o) => o.title))}.`,
+      );
     }
   }
 

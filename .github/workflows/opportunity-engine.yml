@@ -1,0 +1,23 @@
+name: Opportunity Engine Sweep
+
+on:
+  schedule:
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    # Belt-and-suspenders alongside curl's own --max-time below: stops a
+    # hung run from silently occupying the schedule instead of failing
+    # loudly within minutes (see webhook-sweep.yml's 2026-08-06 incident).
+    timeout-minutes: 3
+    steps:
+      - name: Call opportunity-engine endpoint
+        run: |
+          if [ -z "${{ secrets.APP_URL }}" ] || [ -z "${{ secrets.CRON_SECRET }}" ]; then
+            echo "APP_URL and CRON_SECRET repo secrets are not set — skipping. See DEPLOYMENT.md."
+            exit 0
+          fi
+          curl -sf --max-time 60 --retry 3 --retry-delay 5 -X GET "${{ secrets.APP_URL }}/api/cron/opportunity-engine" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

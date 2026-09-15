@@ -35,6 +35,7 @@ test.describe("accessibility — public pages", () => {
 // these pages render with real data instead of every empty state.
 const AUTHENTICATED_PAGES = [
   "/dashboard",
+  "/opportunities",
   "/prospects",
   "/prospects/lists",
   "/campaigns",

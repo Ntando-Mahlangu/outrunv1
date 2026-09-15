@@ -246,6 +246,28 @@ period's last one, so a daily cadence is enough even for weekly reviews.
 Without `CRON_SECRET` set, this endpoint also refuses every request
 (`501`) — reviews can still be generated manually from the UI regardless.
 
+## 9a2. Opportunity Engine
+
+docs/outrun/10 "GROWTH OPPORTUNITY ENGINE" — proactively scans each
+workspace's own leads, calls, and campaigns for dormant leads, high-fit
+uncontacted prospects, overdue callbacks, and statistically-backed segment
+patterns, then surfaces each as a durable, explainable `Opportunity` a
+user can Review & Launch. Users can trigger a rescan on demand from
+`/opportunities`, but keeping it fresh without a visit needs the same kind
+of scheduler as Strategic Reviews above, hitting
+`GET /api/cron/opportunity-engine` once a day.
+
+- **Vercel**: Vercel's Hobby plan only allows one daily `vercel.json`
+  cron slot, already spent on Strategic Reviews — use the GitHub Actions
+  option below instead, or a paid plan's additional cron slots.
+- **Any other host**: `.github/workflows/opportunity-engine.yml` runs
+  daily and calls the endpoint, using the same `APP_URL` and
+  `CRON_SECRET` repository secrets as the crons above.
+
+Without `CRON_SECRET` set, this endpoint also refuses every request
+(`501`) — opportunities can still be rescanned manually from the UI
+regardless.
+
 ## 9b. Background job queue
 
 docs/outrun/11-13 "BACKGROUND JOBS" — Growth Blueprint generation, SEO

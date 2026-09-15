@@ -7,6 +7,7 @@ import { getTodaysMission, getMissionActionHref } from "@/lib/dashboard/mission"
 import { getBusinessHealth, type HealthCategory } from "@/lib/growth-partner/health";
 import { getBiggestWinThisWeek } from "@/lib/growth-partner/weekly-win";
 import { getRisksAndOpportunities } from "@/lib/growth-partner/risks";
+import { getOpenOpportunities } from "@/lib/opportunities/queries";
 import { getBusinessSnapshot } from "@/lib/dashboard/business-snapshot";
 import { getGoalsTasksSummary } from "@/lib/dashboard/goals-tasks-summary";
 import { getCampaignOverview } from "@/lib/dashboard/campaign-overview";
@@ -15,7 +16,7 @@ import { getUpcomingTasks, getRecentNotifications } from "@/lib/dashboard/right-
 import { eventLabel } from "@/lib/memory/event-labels";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
-import { ImpactBadge, Badge } from "@/components/ui/badge";
+import { ImpactBadge, Badge, type ImpactLevel } from "@/components/ui/badge";
 import { ScoreGauge } from "@/components/growth-blueprint/score-gauge";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { EvidenceToggle } from "@/components/dashboard/evidence-toggle";
@@ -90,6 +91,7 @@ export default async function DashboardPage() {
     upcomingTasks,
     notifications,
     recentEvents,
+    openOpportunities,
   ] = await Promise.all([
     getBusinessHealth(organization.id),
     getBiggestWinThisWeek(organization.id),
@@ -105,7 +107,9 @@ export default async function DashboardPage() {
       orderBy: { createdAt: "desc" },
       take: 6,
     }),
+    getOpenOpportunities(organization.id),
   ]);
+  const topDetectedOpportunities = openOpportunities.slice(0, 3);
   const firstName = session.user.name.split(" ")[0] ?? session.user.name;
   const today = new Date();
 
@@ -542,7 +546,7 @@ export default async function DashboardPage() {
         </Card>
         </RevealItem>
 
-        {blueprint && (
+        {(topDetectedOpportunities.length > 0 || blueprint) && (
           <RevealItem>
           <Card interactive>
             <div className="mb-4 flex items-center justify-between">
@@ -550,28 +554,47 @@ export default async function DashboardPage() {
                 AI Opportunities
               </h2>
               <Link
-                href="/blueprint"
+                href="/opportunities"
                 className="text-sm text-[var(--color-accent-text)] hover:underline"
               >
                 View all
               </Link>
             </div>
-            <ul className="space-y-4">
-              {opportunities.map((o) => (
-                <li
-                  key={o.title}
-                  className="border-b border-[var(--color-border)] pb-4 last:border-0 last:pb-0"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="font-medium text-[var(--color-text-primary)]">{o.title}</p>
-                    <ImpactBadge level={o.priority} label={`${o.priority} priority`} />
-                  </div>
-                  <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-                    {o.description}
-                  </p>
-                </li>
-              ))}
-            </ul>
+            {topDetectedOpportunities.length > 0 ? (
+              <ul className="space-y-4">
+                {topDetectedOpportunities.map((o) => (
+                  <li
+                    key={o.id}
+                    className="border-b border-[var(--color-border)] pb-4 last:border-0 last:pb-0"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-medium text-[var(--color-text-primary)]">{o.title}</p>
+                      <ImpactBadge level={o.estimatedImpact as ImpactLevel} />
+                    </div>
+                    <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                      {o.summary}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <ul className="space-y-4">
+                {opportunities.map((o) => (
+                  <li
+                    key={o.title}
+                    className="border-b border-[var(--color-border)] pb-4 last:border-0 last:pb-0"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-medium text-[var(--color-text-primary)]">{o.title}</p>
+                      <ImpactBadge level={o.priority} label={`${o.priority} priority`} />
+                    </div>
+                    <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                      {o.description}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
           </Card>
           </RevealItem>
         )}

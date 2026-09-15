@@ -11,6 +11,7 @@ import { cn } from "@/lib/cn";
 // only list routes that exist today; add entries here as each ships.
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/opportunities", label: "Opportunities" },
   { href: "/blueprint", label: "Growth Blueprint" },
   { href: "/tasks", label: "Tasks" },
   { href: "/goals", label: "Goals" },

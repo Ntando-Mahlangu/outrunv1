@@ -9,7 +9,7 @@ import type { ImpactLevel } from "@/components/ui/badge";
 // the function that uses it.
 export type OpportunityFeedItem = {
   id: string;
-  source: "Growth Blueprint" | "SEO Analysis" | "Unactioned Prospects" | "Reply Rate Trend";
+  source: "Growth Blueprint" | "SEO Analysis";
   title: string;
   description: string;
   estimatedImpact: ImpactLevel | null;
@@ -20,7 +20,10 @@ export type OpportunityFeedItem = {
 
 export type OpportunitySort = "roi" | "fastest" | "lowest-effort" | "confidence";
 
-const IMPACT_WEIGHT: Record<ImpactLevel, number> = { High: 3, Medium: 2, Low: 1 };
+// Exported so anything else scoring by impact (e.g. the dashboard's
+// top-3 Opportunity picks, src/lib/opportunities/queries.ts) shares this
+// one weighting instead of redefining it.
+export const IMPACT_WEIGHT: Record<ImpactLevel, number> = { High: 3, Medium: 2, Low: 1 };
 const EFFORT_EASE_WEIGHT: Record<ImpactLevel, number> = { Low: 3, Medium: 2, High: 1 };
 
 /**

@@ -211,6 +211,7 @@ model Organization {
   recommendationFeedback RecommendationFeedback[]
   apiKeys          ApiKey[]
   webhookEndpoints WebhookEndpoint[]
+  opportunities    Opportunity[]
 
   @@map("organization")
 }
@@ -659,6 +660,8 @@ enum EventType {
   STRATEGIC_REVIEW_GENERATED
   GOAL_CREATED
   GOAL_ACHIEVED
+  OPPORTUNITY_DETECTED
+  OPPORTUNITY_LAUNCHED
 }
 
 enum ReviewPeriod {
@@ -975,6 +978,7 @@ enum NotificationType {
   BILLING_EVENT
   TEAM_MEMBER_JOINED
   AUTONOMOUS_SEND_PAUSED
+  OPPORTUNITY_DETECTED
 }
 
 model Notification {
@@ -1080,6 +1084,56 @@ model RecommendationFeedback {
 
   @@unique([organizationId, itemId])
   @@map("recommendation_feedback")
+}
+
+enum OpportunityStatus {
+  DETECTED
+  LAUNCHED
+  DISMISSED
+  EXPIRED
+}
+
+// docs/outrun/10 "GROWTH OPPORTUNITY ENGINE" — Detect -> Explain ->
+// Recommend -> Approve -> Execute -> Track -> Learn. One row per detected
+// condition (dedupeKey), refreshed in place each sweep rather than
+// duplicated, so a launch/dismiss decision persists across re-detection.
+// `type` is a free string, not an enum -- matches WebhookDelivery.eventType:
+// validated against a TS const union in app code
+// (src/lib/opportunities/types.ts) so a new detector never needs a
+// migration. `status` IS a real enum since that lifecycle is small/stable.
+model Opportunity {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  type      String // OpportunityType union — src/lib/opportunities/types.ts
+  dedupeKey String // unique per [organizationId, dedupeKey]
+
+  title           String
+  summary         String // what was detected, plain English
+  whyItMatters    String
+  evidence        Json // string[] — concrete facts only, never invented
+  confidence      Int // 0-100, deterministic from real thresholds/counts
+  estimatedImpact String // "Low" | "Medium" | "High"
+  estimatedValue  Int? // dollars — only set when BusinessProfile.avgCustomerValue exists
+
+  recommendedAction String
+  actionType        String // "CREATE_LEAD_LIST_AND_CALL" | "SUGGEST_SEARCH" | "REVIEW_ONLY"
+  actionPayload     Json?
+  relatedCompanyIds Json? // string[], snapshot only — never trusted at execution time
+
+  status           OpportunityStatus @default(DETECTED)
+  detectedAt       DateTime          @default(now())
+  resolvedAt       DateTime? // set once status leaves DETECTED
+  launchedByUserId String?
+  executionResult  Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, dedupeKey])
+  @@index([organizationId, status])
+  @@map("opportunity")
 }
 
 // docs/outrun/10 "GOAL MANAGEMENT" — "Users define goals... Every

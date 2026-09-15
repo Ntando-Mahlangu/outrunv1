@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import type { Company } from "@prisma/client";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
@@ -25,8 +26,9 @@ type Interpretation = {
   provider: "google_places" | "foursquare" | "yelp" | "openstreetmap";
 };
 
-export default function ProspectsPage() {
-  const [query, setQuery] = useState("");
+function ProspectsPageContent() {
+  const searchParams = useSearchParams();
+  const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
   const [companies, setCompanies] = useState<Company[] | null>(null);
   const [interpretation, setInterpretation] = useState<Interpretation | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -60,8 +62,7 @@ export default function ProspectsPage() {
     });
   }
 
-  async function handleSearch(e: React.FormEvent) {
-    e.preventDefault();
+  async function runSearch(q: string) {
     setError(null);
     setIsSearching(true);
     setSelectedIds(new Set());
@@ -70,7 +71,7 @@ export default function ProspectsPage() {
       const res = await fetch("/api/prospects/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ query: q }),
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Something went wrong.");
@@ -83,6 +84,31 @@ export default function ProspectsPage() {
       setIsSearching(false);
     }
   }
+
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    void runSearch(query);
+  }
+
+  // docs/outrun/10 "GROWTH OPPORTUNITY ENGINE" — a Segment Expansion
+  // opportunity's "Search This Segment" action deep-links here with
+  // ?q=<segment>, so approving it actually runs the search rather than
+  // just landing on an empty page. Only reacts to the id once per page
+  // load, so a manual re-search or filter change afterward isn't undone
+  // by the URL still carrying the old query.
+  const prefillHandled = useRef(false);
+  useEffect(() => {
+    if (prefillHandled.current) return;
+    const q = searchParams.get("q");
+    if (!q) return;
+    prefillHandled.current = true;
+    // Deliberate one-time data fetch triggered by a URL param, not a
+    // prop-into-state sync (query's own initial value already reads
+    // searchParams directly, above) — an actual network request, which
+    // "You Might Not Need an Effect" treats as a valid effect use case.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void runSearch(q);
+  }, [searchParams]);
 
   async function handleImportFile(file: File) {
     setError(null);
@@ -286,5 +312,16 @@ export default function ProspectsPage() {
         <ColdCallingMode companies={filteredCompanies} onClose={() => setIsCalling(false)} />
       )}
     </div>
+  );
+}
+
+// useSearchParams requires a Suspense boundary above it in the App
+// Router — this page has no server-rendered fallback content worth
+// showing during the (effectively instant, client-only) initial render.
+export default function ProspectsPage() {
+  return (
+    <Suspense fallback={null}>
+      <ProspectsPageContent />
+    </Suspense>
   );
 }
