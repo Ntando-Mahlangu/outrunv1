@@ -10,9 +10,9 @@ const buttonVariants = cva(
         primary:
           "bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)]",
         secondary:
-          "bg-[var(--color-card)] text-[var(--color-text-primary)] border border-[var(--color-border)] hover:bg-[var(--color-bg-secondary)]",
+          "bg-[var(--color-card)] text-[var(--color-text-primary)] border border-[var(--color-border)] backdrop-blur-md hover:bg-[var(--color-bg-secondary)]",
         ghost:
-          "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-card)]",
+          "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-card)] hover:backdrop-blur-md",
       },
       size: {
         default: "h-11 px-5",

@@ -19,9 +19,15 @@ type Message = { role: "USER" | "ASSISTANT"; content: string };
 export function ChatPanel({
   initialMessages,
   autoAsk,
+  floating,
 }: {
   initialMessages: Message[];
   autoAsk?: string;
+  /** Rendered as a popover directly over other page content (see
+   * GlobalChatWidget) rather than in the page's normal flow — needs a
+   * more opaque surface than the default Card so blurred text from
+   * whatever's underneath doesn't ghost through into its own text. */
+  floating?: boolean;
 }) {
   const router = useRouter();
   const [messages, setMessages] = useState(initialMessages);
@@ -68,7 +74,7 @@ export function ChatPanel({
   }
 
   return (
-    <Card className="flex h-[32rem] flex-col">
+    <Card className={cn("flex h-[32rem] flex-col", floating && "bg-[var(--color-glass-menu)]")}>
       <div className="flex-1 space-y-4 overflow-y-auto pr-1">
         {messages.length === 0 && (
           <p className="text-sm text-[var(--color-text-muted)]">

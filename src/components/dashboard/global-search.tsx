@@ -61,7 +61,7 @@ export function GlobalSearch() {
       />
 
       {open && query.trim().length >= 2 && (
-        <div className="absolute left-0 right-0 top-11 z-20 max-h-80 overflow-y-auto rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-card)] shadow-lg">
+        <div className="glass-sheen absolute left-0 right-0 top-11 z-20 max-h-80 overflow-y-auto rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-glass-menu)] shadow-[var(--shadow-glass)] backdrop-blur-2xl">
           {results.length === 0 ? (
             <p className="px-4 py-3 text-sm text-[var(--color-text-muted)]">No matches.</p>
           ) : (

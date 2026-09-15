@@ -44,7 +44,7 @@ export function CookieConsentBanner({ initialConsent }: { initialConsent: Cookie
     <div
       role="dialog"
       aria-label="Cookie preferences"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--color-border)] bg-[var(--color-bg-secondary)] px-4 py-4 shadow-[0_-8px_30px_-10px_rgba(0,0,0,0.5)]"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--color-border)] bg-[var(--color-glass-menu)] px-4 py-4 shadow-[0_-8px_30px_-10px_rgba(0,0,0,0.5)] backdrop-blur-2xl"
     >
       <div className="mx-auto flex max-w-4xl flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-[var(--color-text-secondary)]">

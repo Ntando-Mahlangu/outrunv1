@@ -40,7 +40,7 @@ export function GlobalChatWidget({ initialMessages }: { initialMessages: Message
 
       {isOpen && (
         <div className="absolute right-0 z-20 mt-2 w-96 max-w-[90vw]">
-          <ChatPanel initialMessages={initialMessages} />
+          <ChatPanel initialMessages={initialMessages} floating />
         </div>
       )}
     </div>

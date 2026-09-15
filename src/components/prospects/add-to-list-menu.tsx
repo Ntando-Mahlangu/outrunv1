@@ -100,7 +100,7 @@ export function AddToListMenu({ companyId }: { companyId: string }) {
       </Button>
 
       {open && (
-        <div className="absolute right-0 z-20 mt-2 w-64 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-3 shadow-lg">
+        <div className="glass-sheen absolute right-0 z-20 mt-2 w-64 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-glass-menu)] p-3 shadow-[var(--shadow-glass)] backdrop-blur-2xl">
           {error && <p className="mb-2 text-xs text-[var(--color-error-text)]">{error}</p>}
 
           {loading && <p className="text-xs text-[var(--color-text-muted)]">Loading lists…</p>}

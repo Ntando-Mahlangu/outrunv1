@@ -38,7 +38,30 @@ export default async function DashboardLayout({
       <div className="pointer-events-none fixed inset-0 z-0 opacity-40 print:hidden">
         <GenerativeLattice />
       </div>
-      <header className="relative z-10 flex h-16 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-bg-primary)] px-6 print:hidden">
+      {/* "Liquid glass" pass — soft, fixed ambient colour behind the
+          persistent app shell, so the translucent/blurred header, sidebar,
+          and cards throughout the app have real colour to tint from
+          rather than blurring a flat, nearly-black backdrop into more
+          flat near-black. Plain radial gradients rather than
+          LiquidMesh's blend-mode blobs, which read as barely-there
+          against a background this dark. */}
+      <div
+        className="pointer-events-none fixed inset-0 z-0 print:hidden"
+        style={{
+          background:
+            "radial-gradient(1100px circle at 12% -10%, color-mix(in srgb, var(--color-accent) 32%, transparent), transparent 60%)," +
+            "radial-gradient(900px circle at 100% 15%, color-mix(in srgb, var(--color-accent-2) 26%, transparent), transparent 55%)," +
+            "radial-gradient(1000px circle at 25% 105%, color-mix(in srgb, var(--color-accent) 20%, transparent), transparent 60%)",
+        }}
+      />
+      {/* z-20, not z-10 like the content row below — a pre-existing stacking
+          bug this glass pass surfaced: with equal z-index, DOM order alone
+          decided paint order, so the page content (painted after the
+          header) actually rendered on top of anything from the header
+          (the notification/search/chat dropdowns) that overflowed past
+          the header's own 64px height into the content area below. Those
+          dropdowns need to reliably win regardless of how far they extend. */}
+      <header className="glass-sheen relative z-20 flex h-16 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)] px-6 backdrop-blur-2xl print:hidden">
         <Logo />
         <div className="flex items-center gap-4">
           {organization && <GlobalSearch />}
@@ -61,10 +84,12 @@ export default async function DashboardLayout({
           constraints so the exported document isn't squeezed into the
           in-app content width. */}
       <div className="relative z-10 mx-auto flex max-w-6xl gap-8 px-6 py-8 print:block print:max-w-none print:gap-0 print:p-0">
-        <aside className="hidden w-56 shrink-0 space-y-6 sm:block print:hidden">
-          <SidebarNav />
-          <div className="border-t border-[var(--color-border)] pt-4">
-            <SignOutButton />
+        <aside className="hidden w-56 shrink-0 self-start sm:block print:hidden">
+          <div className="glass-sheen space-y-6 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-card)] p-4 shadow-[var(--shadow-glass)] backdrop-blur-2xl">
+            <SidebarNav />
+            <div className="border-t border-[var(--color-border)] pt-4">
+              <SignOutButton />
+            </div>
           </div>
         </aside>
 

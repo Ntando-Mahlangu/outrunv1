@@ -97,7 +97,7 @@ export function NotificationBell() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 z-20 mt-2 w-80 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-card)] shadow-[0_4px_16px_rgba(0,0,0,0.4)]">
+        <div className="glass-sheen absolute right-0 z-20 mt-2 w-80 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-glass-menu)] shadow-[var(--shadow-glass)] backdrop-blur-2xl">
           <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3">
             <span className="text-sm font-medium text-[var(--color-text-primary)]">Notifications</span>
             {unreadCount > 0 && (
