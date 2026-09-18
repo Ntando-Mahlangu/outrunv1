@@ -105,7 +105,9 @@ async function buildPeriodSummary(organizationId: string, periodStart: Date, per
 
   if (currentSignals.length > 0) {
     lines.push("Risks/gaps observed as of this review:");
-    for (const s of currentSignals) lines.push(`- [${s.severity}] ${s.title}: ${s.reason}`);
+    for (const s of currentSignals) {
+      lines.push(`- [${s.severity}/${s.urgency}] ${s.title}: ${s.reason} Recommendation: ${s.recommendation}`);
+    }
   } else {
     lines.push("No obvious risks detected as of this review.");
   }

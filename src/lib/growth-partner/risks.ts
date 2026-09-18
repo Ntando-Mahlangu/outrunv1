@@ -1,10 +1,17 @@
 import { getBusinessContext } from "@/lib/memory/context";
 import type { GrowthBlueprintData } from "@/lib/growth-blueprint/schema";
 
+export type RiskUrgency = "Now" | "This Week" | "Monitor";
+
 export type Signal = {
   severity: "High" | "Medium" | "Low";
   title: string;
+  // What's true, and why it's a risk — an observed fact, never the fix.
   reason: string;
+  // The concrete next step, separate from the fact above (Article IV/VIII
+  // — never blur an observation and a recommendation into one field).
+  recommendation: string;
+  urgency: RiskUrgency;
 };
 
 const STALE_BLUEPRINT_DAYS = 30;
@@ -23,7 +30,9 @@ export async function getRisksAndOpportunities(organizationId: string): Promise<
     signals.push({
       severity: "High",
       title: "No Growth Blueprint yet",
-      reason: "Generate one to get a scored, evidence-based growth strategy.",
+      reason: "There's no scored, evidence-based growth strategy guiding what to do next.",
+      recommendation: "Generate your Growth Blueprint.",
+      urgency: "Now",
     });
     return signals;
   }
@@ -36,6 +45,8 @@ export async function getRisksAndOpportunities(organizationId: string): Promise<
       severity: "Medium",
       title: "Growth Blueprint is out of date",
       reason: `Last generated ${daysSinceBlueprint} days ago — your business has likely changed since then.`,
+      recommendation: "Regenerate your Growth Blueprint to get an up-to-date strategy.",
+      urgency: "This Week",
     });
   }
 
@@ -44,6 +55,8 @@ export async function getRisksAndOpportunities(organizationId: string): Promise<
       severity: "Medium",
       title: "No campaigns running",
       reason: "You have prospects researched but no campaign built around them yet.",
+      recommendation: "Build a campaign from your researched prospects.",
+      urgency: "This Week",
     });
   }
 
@@ -51,7 +64,9 @@ export async function getRisksAndOpportunities(organizationId: string): Promise<
     signals.push({
       severity: "Medium",
       title: "Single acquisition channel",
-      reason: `You currently rely only on "${context.businessProfile.acquisitionChannels[0]}" — a second channel would reduce risk.`,
+      reason: `You currently rely only on "${context.businessProfile.acquisitionChannels[0]}" — a single channel is a concentration risk.`,
+      recommendation: "Test a second acquisition channel to reduce that dependency.",
+      urgency: "Monitor",
     });
   }
 
@@ -61,7 +76,9 @@ export async function getRisksAndOpportunities(organizationId: string): Promise<
       signals.push({
         severity: "Low",
         title: `${category.category} is scoring low (${category.score}/100)`,
-        reason: category.recommendation,
+        reason: category.reason,
+        recommendation: category.recommendation,
+        urgency: "Monitor",
       });
     }
   }
