@@ -151,6 +151,34 @@ export async function sendCampaignOutreach(organizationId: string, campaignId: s
 }
 
 /**
+ * Lets the owner edit AI-generated outreach before it goes out
+ * (docs/outrun/07 "AI writes... the owner reviews, edits, and approves").
+ * Only allowed while the message is still NOT_SENT/FAILED — once it's
+ * actually gone out, the record needs to keep reflecting what a real
+ * prospect received, not a later rewrite.
+ */
+export async function updateOutreachMessageContent(
+  organizationId: string,
+  messageId: string,
+  updates: { subject: string; body: string; linkedinMessage: string | null },
+) {
+  const message = await prisma.outreachMessage.findFirst({
+    where: { id: messageId, company: { organizationId } },
+  });
+  if (!message) {
+    throw new UserFacingError("That message could not be found.");
+  }
+  if (message.sendStatus === "SENT") {
+    throw new UserFacingError("This message has already been sent and can't be edited.");
+  }
+
+  return prisma.outreachMessage.update({
+    where: { id: message.id },
+    data: updates,
+  });
+}
+
+/**
  * Manually records whether a prospect replied (docs/outrun/07 "A/B
  * TESTING" comparison). There's no inbound-email integration to detect
  * this automatically, so it's a plain user-reported toggle — never

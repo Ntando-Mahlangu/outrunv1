@@ -6,6 +6,8 @@ import type { OutreachMessage, Company } from "@prisma/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { FormError } from "@/components/ui/form-error";
 
 type MessageWithCompany = OutreachMessage & { company: Company };
@@ -27,6 +29,9 @@ export function CampaignSendPanel({
   const [replyBusyId, setReplyBusyId] = useState<string | null>(null);
   const [isSendingAll, setIsSendingAll] = useState(false);
   const [generatingFollowUpsFor, setGeneratingFollowUpsFor] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState({ subject: "", body: "", linkedinMessage: "" });
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [lastSummary, setLastSummary] = useState<{
     sent: number;
     failed: number;
@@ -97,6 +102,44 @@ export function CampaignSendPanel({
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
       setGeneratingFollowUpsFor(null);
+    }
+  }
+
+  function startEdit(message: MessageWithCompany) {
+    setError(null);
+    setEditingId(message.id);
+    setEditDraft({
+      subject: message.subject,
+      body: message.body,
+      linkedinMessage: message.linkedinMessage ?? "",
+    });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+  }
+
+  async function saveEdit(messageId: string) {
+    setError(null);
+    setIsSavingEdit(true);
+    try {
+      const res = await fetch(`/api/outreach/${messageId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subject: editDraft.subject,
+          body: editDraft.body,
+          linkedinMessage: editDraft.linkedinMessage.trim() ? editDraft.linkedinMessage : null,
+        }),
+      });
+      const responseBody = await res.json();
+      if (!res.ok) throw new Error(responseBody.error ?? "Something went wrong.");
+      setMessages((prev) => prev.map((m) => (m.id === messageId ? { ...m, ...responseBody.message } : m)));
+      setEditingId(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setIsSavingEdit(false);
     }
   }
 
@@ -194,24 +237,36 @@ export function CampaignSendPanel({
                     hasEmail={Boolean(message.company.contactEmail)}
                   />
                 </div>
-                <p className="mt-2 text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
-                  Subject
-                </p>
-                <p className="text-sm font-medium text-[var(--color-text-primary)]">
-                  {message.subject}
-                </p>
-                <p className="mt-2 whitespace-pre-wrap text-sm text-[var(--color-text-secondary)]">
-                  {message.body}
-                </p>
-                {message.linkedinMessage && (
-                  <div className="mt-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-primary)] p-3">
-                    <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
-                      LinkedIn Message
+                {editingId === message.id ? (
+                  <MessageEditor
+                    draft={editDraft}
+                    onChange={setEditDraft}
+                    onSave={() => saveEdit(message.id)}
+                    onCancel={cancelEdit}
+                    isSaving={isSavingEdit}
+                  />
+                ) : (
+                  <>
+                    <p className="mt-2 text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
+                      Subject
                     </p>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-[var(--color-text-secondary)]">
-                      {message.linkedinMessage}
+                    <p className="text-sm font-medium text-[var(--color-text-primary)]">
+                      {message.subject}
                     </p>
-                  </div>
+                    <p className="mt-2 whitespace-pre-wrap text-sm text-[var(--color-text-secondary)]">
+                      {message.body}
+                    </p>
+                    {message.linkedinMessage && (
+                      <div className="mt-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-primary)] p-3">
+                        <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
+                          LinkedIn Message
+                        </p>
+                        <p className="mt-1 whitespace-pre-wrap text-sm text-[var(--color-text-secondary)]">
+                          {message.linkedinMessage}
+                        </p>
+                      </div>
+                    )}
+                  </>
                 )}
                 <div className="mt-3 flex items-center gap-2">
                   <Button
@@ -222,7 +277,8 @@ export function CampaignSendPanel({
                       sendingId === message.id ||
                       message.sendStatus === "SENT" ||
                       !message.company.contactEmail ||
-                      !emailConfigured
+                      !emailConfigured ||
+                      editingId === message.id
                     }
                   >
                     {sendingId === message.id
@@ -233,6 +289,11 @@ export function CampaignSendPanel({
                           ? "Retry Send"
                           : "Send"}
                   </Button>
+                  {message.sendStatus !== "SENT" && editingId !== message.id && (
+                    <Button size="sm" variant="ghost" onClick={() => startEdit(message)}>
+                      Edit
+                    </Button>
+                  )}
                   {message.sendStatus === "SENT" && (
                     <Button
                       size="sm"
@@ -279,43 +340,63 @@ export function CampaignSendPanel({
                             hasEmail={Boolean(message.company.contactEmail)}
                           />
                         </div>
-                        <p className="mt-2 text-sm font-medium text-[var(--color-text-primary)]">
-                          {followUp.subject}
-                        </p>
-                        <p className="mt-1 whitespace-pre-wrap text-sm text-[var(--color-text-secondary)]">
-                          {followUp.body}
-                        </p>
-                        <p className="mt-2 text-xs text-[var(--color-text-muted)]">
-                          Why this follow-up: {followUp.openingRationale}
-                        </p>
+                        {editingId === followUp.id ? (
+                          <MessageEditor
+                            draft={editDraft}
+                            onChange={setEditDraft}
+                            onSave={() => saveEdit(followUp.id)}
+                            onCancel={cancelEdit}
+                            isSaving={isSavingEdit}
+                          />
+                        ) : (
+                          <>
+                            <p className="mt-2 text-sm font-medium text-[var(--color-text-primary)]">
+                              {followUp.subject}
+                            </p>
+                            <p className="mt-1 whitespace-pre-wrap text-sm text-[var(--color-text-secondary)]">
+                              {followUp.body}
+                            </p>
+                            <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+                              Why this follow-up: {followUp.openingRationale}
+                            </p>
+                          </>
+                        )}
                         {message.gotReply ? (
                           <p className="mt-2 text-xs text-[var(--color-text-muted)]">
                             Sequence stopped — prospect already replied.
                           </p>
                         ) : (
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            className="mt-2"
-                            onClick={() => sendOne(followUp.id)}
-                            disabled={
-                              sendingId === followUp.id ||
-                              followUp.sendStatus === "SENT" ||
-                              !message.company.contactEmail ||
-                              !emailConfigured ||
-                              !isDue(followUp)
-                            }
-                          >
-                            {sendingId === followUp.id
-                              ? "Sending…"
-                              : followUp.sendStatus === "SENT"
-                                ? "Sent"
-                                : !isDue(followUp)
-                                  ? "Not due yet"
-                                  : followUp.sendStatus === "FAILED"
-                                    ? "Retry Send"
-                                    : "Send"}
-                          </Button>
+                          editingId !== followUp.id && (
+                            <div className="mt-2 flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => sendOne(followUp.id)}
+                                disabled={
+                                  sendingId === followUp.id ||
+                                  followUp.sendStatus === "SENT" ||
+                                  !message.company.contactEmail ||
+                                  !emailConfigured ||
+                                  !isDue(followUp)
+                                }
+                              >
+                                {sendingId === followUp.id
+                                  ? "Sending…"
+                                  : followUp.sendStatus === "SENT"
+                                    ? "Sent"
+                                    : !isDue(followUp)
+                                      ? "Not due yet"
+                                      : followUp.sendStatus === "FAILED"
+                                        ? "Retry Send"
+                                        : "Send"}
+                              </Button>
+                              {followUp.sendStatus !== "SENT" && (
+                                <Button size="sm" variant="ghost" onClick={() => startEdit(followUp)}>
+                                  Edit
+                                </Button>
+                              )}
+                            </div>
+                          )
                         )}
                       </div>
                     ))}
@@ -399,6 +480,58 @@ function VariantComparison({ messages }: { messages: MessageWithCompany[] }) {
         </p>
       )}
     </Card>
+  );
+}
+
+type MessageDraft = { subject: string; body: string; linkedinMessage: string };
+
+function MessageEditor({
+  draft,
+  onChange,
+  onSave,
+  onCancel,
+  isSaving,
+}: {
+  draft: MessageDraft;
+  onChange: (draft: MessageDraft) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  isSaving: boolean;
+}) {
+  return (
+    <div className="mt-2 space-y-2">
+      <Input
+        aria-label="Subject"
+        value={draft.subject}
+        onChange={(e) => onChange({ ...draft, subject: e.target.value })}
+        placeholder="Subject"
+        disabled={isSaving}
+      />
+      <Textarea
+        aria-label="Message body"
+        value={draft.body}
+        onChange={(e) => onChange({ ...draft, body: e.target.value })}
+        rows={5}
+        placeholder="Message body"
+        disabled={isSaving}
+      />
+      <Textarea
+        aria-label="LinkedIn message"
+        value={draft.linkedinMessage}
+        onChange={(e) => onChange({ ...draft, linkedinMessage: e.target.value })}
+        rows={3}
+        placeholder="LinkedIn message (optional)"
+        disabled={isSaving}
+      />
+      <div className="flex gap-2">
+        <Button size="sm" onClick={onSave} disabled={isSaving || !draft.subject.trim() || !draft.body.trim()}>
+          {isSaving ? "Saving…" : "Save"}
+        </Button>
+        <Button size="sm" variant="ghost" onClick={onCancel} disabled={isSaving}>
+          Cancel
+        </Button>
+      </div>
+    </div>
   );
 }
 
