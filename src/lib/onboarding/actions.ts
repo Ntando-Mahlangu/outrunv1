@@ -14,7 +14,15 @@ export async function saveBusinessDiscovery(input: BusinessDiscoveryInput) {
   const organization = await getCurrentOrganization(session.user.id);
   if (!organization) throw new Error("No workspace found for this account.");
 
-  const parsed = businessDiscoverySchema.parse(input);
+  const result = businessDiscoverySchema.safeParse(input);
+  if (!result.success) {
+    // Never let ZodError.message reach the client — it's a
+    // JSON-stringified issue array, not something a user should see.
+    // Each field's own schema message is already written to be
+    // human-readable, so surface just the first one.
+    throw new Error(result.error.issues[0]?.message ?? "Please check your answers and try again.");
+  }
+  const parsed = result.data;
 
   await prisma.$transaction([
     prisma.businessProfile.upsert({

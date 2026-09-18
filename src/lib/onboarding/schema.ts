@@ -60,7 +60,7 @@ export const businessDiscoverySchema = z.object({
   mainGoal: z.string().min(1),
   website: z.preprocess(
     (val) => (val === "" ? null : val),
-    z.string().url().nullable(),
+    z.string().url("Enter a valid website URL, like https://example.com.").nullable(),
   ),
   competitors: z.array(z.string()),
 });

@@ -18,6 +18,20 @@ import {
   sellingLocationOptions,
 } from "@/lib/onboarding/schema";
 
+// Mirrors the server-side check (src/lib/onboarding/schema.ts's
+// z.string().url()) so an invalid URL is caught the moment it's typed,
+// on the step that actually has it — not several screens later when the
+// whole form finally submits.
+function isValidWebsiteUrl(value: string): boolean {
+  if (!value.trim()) return true; // empty is fine — website is optional
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 type Answers = {
   description: string;
   idealCustomer: string;
@@ -242,7 +256,7 @@ export default function OnboardingPage() {
     {
       title: "What's your website?",
       subtitle: "Optional, but strongly encouraged — we'll factor it into your analysis.",
-      canContinue: true,
+      canContinue: noWebsite || isValidWebsiteUrl(answers.website),
       render: () => (
         <div className="space-y-4">
           <Input
@@ -254,6 +268,11 @@ export default function OnboardingPage() {
             value={answers.website}
             onChange={(e) => setAnswers({ ...answers, website: e.target.value })}
           />
+          {!noWebsite && !isValidWebsiteUrl(answers.website) && (
+            <p className="text-sm text-[var(--color-error-text)]">
+              Enter a full URL, like https://yourbusiness.com.
+            </p>
+          )}
           <label className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
             <input
               type="checkbox"
