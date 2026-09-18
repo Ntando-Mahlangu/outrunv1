@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import Link from "next/link";
 import { getCurrentSession } from "@/lib/session";
 import { getCurrentOrganization } from "@/lib/org";
@@ -16,6 +17,7 @@ import { getUpcomingTasks, getRecentNotifications } from "@/lib/dashboard/right-
 import { eventLabel } from "@/lib/memory/event-labels";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ImpactBadge, Badge, type ImpactLevel } from "@/components/ui/badge";
 import { ScoreGauge } from "@/components/growth-blueprint/score-gauge";
 import { ProgressBar } from "@/components/ui/progress-bar";
@@ -55,6 +57,362 @@ function quickActions(hasBlueprint: boolean) {
   ];
 }
 
+function CardSkeleton({ title, lines = 3 }: { title: string; lines?: number }) {
+  return (
+    <Card>
+      <Skeleton className="h-4 w-40" />
+      <div className="mt-4 space-y-3">
+        {Array.from({ length: lines }, (_, i) => (
+          <Skeleton key={i} className="h-12" />
+        ))}
+      </div>
+      <span className="sr-only">Loading {title}…</span>
+    </Card>
+  );
+}
+
+async function BusinessSnapshotCard({
+  organizationId,
+  planTier,
+}: {
+  organizationId: string;
+  planTier: string;
+}) {
+  const snapshot = await getBusinessSnapshot(organizationId);
+
+  return (
+    <Card interactive>
+      <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
+        Business Snapshot
+      </h2>
+
+      {/* Hero row — the two dollar figures that actually matter get
+          their own bordered panel and a progress bar where there's a
+          real target to measure against, instead of sitting flush in
+          the same flat grid as every other count. */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-4">
+          <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
+            Revenue Goal
+          </p>
+          {snapshot.revenueGoal ? (
+            <>
+              <p className="mt-2 text-2xl font-light text-[var(--color-text-primary)]">
+                <CountUp value={snapshot.revenueGoal.currentValue} prefix="$" />
+                <span className="text-sm text-[var(--color-text-muted)]">
+                  {" "}
+                  / ${snapshot.revenueGoal.targetValue.toLocaleString()}
+                </span>
+              </p>
+              <div className="mt-2">
+                <ProgressBar
+                  value={
+                    snapshot.revenueGoal.targetValue > 0
+                      ? (snapshot.revenueGoal.currentValue / snapshot.revenueGoal.targetValue) * 100
+                      : 0
+                  }
+                />
+              </div>
+            </>
+          ) : (
+            <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+              Not set —{" "}
+              <Link href="/goals" className="text-[var(--color-accent-text)] hover:underline">
+                add one on Goals
+              </Link>
+            </p>
+          )}
+        </div>
+
+        <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-4">
+          <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
+            Pipeline Value
+          </p>
+          {snapshot.pipelineValue ? (
+            <>
+              <p className="mt-2 text-2xl font-light text-[var(--color-text-primary)]">
+                <CountUp value={snapshot.pipelineValue.estimate} prefix="$" />
+              </p>
+              <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+                {snapshot.pipelineValue.qualifiedCount} qualified lead
+                {snapshot.pipelineValue.qualifiedCount === 1 ? "" : "s"} × $
+                {snapshot.pipelineValue.avgCustomerValue.toLocaleString()} avg deal size
+              </p>
+            </>
+          ) : (
+            <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+              Not tracked yet — needs an average deal size and at least one Qualified contact
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Secondary metrics — consistent size, one glance to scan. */}
+      <div className="mt-5 grid grid-cols-2 gap-4 border-t border-[var(--color-border)] pt-5 sm:grid-cols-4">
+        <div>
+          <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
+            Campaigns Running
+          </p>
+          <p className="text-2xl font-light text-[var(--color-text-primary)]">
+            <CountUp value={snapshot.campaignsRunning} />
+          </p>
+        </div>
+        <div>
+          <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
+            Reply Rate
+          </p>
+          {snapshot.replyRate != null ? (
+            <p className="text-2xl font-light text-[var(--color-text-primary)]">
+              <CountUp value={snapshot.replyRate} suffix="%" />
+            </p>
+          ) : (
+            <p className="text-sm text-[var(--color-text-muted)]">No outreach sent yet</p>
+          )}
+        </div>
+        <div>
+          <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
+            Positive Replies
+          </p>
+          <p className="text-2xl font-light text-[var(--color-text-primary)]">
+            <CountUp value={snapshot.positiveReplies} />
+          </p>
+        </div>
+        <div>
+          <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
+            Customers Won
+          </p>
+          <p className="text-2xl font-light text-[var(--color-text-primary)]">
+            <CountUp value={snapshot.customersWon} />
+          </p>
+        </div>
+      </div>
+
+      {/* Footer — context, not competing for attention with real
+          metrics. Meetings Booked has no real number behind it yet
+          (docs/outrun/04 — never invent a figure), so it reads as a
+          plain note here instead of an empty-looking stat tile. */}
+      <div className="mt-5 flex items-center justify-between border-t border-[var(--color-border)] pt-4 text-xs text-[var(--color-text-muted)]">
+        <span>
+          Plan: <span className="text-[var(--color-text-secondary)]">{planTier}</span>
+        </span>
+        <span>Meetings booked — not tracked yet</span>
+      </div>
+    </Card>
+  );
+}
+
+async function GoalsTasksCard({ organizationId }: { organizationId: string }) {
+  const goalsTasksSummary = await getGoalsTasksSummary(organizationId);
+
+  return (
+    <Card interactive>
+      <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
+        Goals &amp; Tasks
+      </h2>
+      <div className="grid gap-6 sm:grid-cols-2">
+        <div>
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-[var(--color-text-primary)]">Goals</p>
+            <Link href="/goals" className="text-xs text-[var(--color-accent-text)] hover:underline">
+              View all →
+            </Link>
+          </div>
+          {goalsTasksSummary.goals.total === 0 ? (
+            <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+              No goals set yet — add one to track progress here.
+            </p>
+          ) : (
+            <>
+              <div className="mt-2 mb-1.5 flex items-center justify-between text-sm">
+                <span className="text-[var(--color-text-secondary)]">
+                  {goalsTasksSummary.goals.active} active
+                  {goalsTasksSummary.goals.abandoned > 0 &&
+                    ` · ${goalsTasksSummary.goals.abandoned} abandoned`}
+                </span>
+                <span className="tabular-nums text-[var(--color-text-muted)]">
+                  {goalsTasksSummary.goals.completed} / {goalsTasksSummary.goals.total} completed
+                </span>
+              </div>
+              <ProgressBar value={goalsTasksSummary.goals.completionPercent} />
+
+              {goalsTasksSummary.goals.upcoming.length > 0 && (
+                <ul className="mt-4 space-y-3">
+                  {goalsTasksSummary.goals.upcoming.map((goal) => (
+                    <li key={goal.id}>
+                      <div className="flex items-center justify-between gap-2 text-xs">
+                        <span className="truncate text-[var(--color-text-secondary)]">
+                          {goal.title}
+                        </span>
+                        {goal.targetDate && (
+                          <span
+                            className={cn(
+                              "shrink-0 tabular-nums",
+                              goal.isOverdue
+                                ? "text-[var(--color-error-text)]"
+                                : "text-[var(--color-text-muted)]",
+                            )}
+                          >
+                            {goal.isOverdue ? "Overdue" : `Due ${goal.targetDate.toLocaleDateString()}`}
+                          </span>
+                        )}
+                      </div>
+                      {goal.progressPercent != null && (
+                        <div className="mt-1">
+                          <ProgressBar value={goal.progressPercent} />
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
+        </div>
+        <div>
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-[var(--color-text-primary)]">Growth Tasks</p>
+            <Link href="/tasks" className="text-xs text-[var(--color-accent-text)] hover:underline">
+              View all →
+            </Link>
+          </div>
+          {goalsTasksSummary.tasks.total === 0 ? (
+            <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+              No tasks yet — they&apos;re generated from your Growth Blueprint.
+            </p>
+          ) : (
+            <>
+              <div className="mt-2 mb-1.5 flex items-center justify-between text-sm">
+                <span className="text-[var(--color-text-secondary)]">
+                  {goalsTasksSummary.tasks.pending} pending
+                  {goalsTasksSummary.tasks.dismissed > 0 &&
+                    ` · ${goalsTasksSummary.tasks.dismissed} dismissed`}
+                </span>
+                <span className="tabular-nums text-[var(--color-text-muted)]">
+                  {goalsTasksSummary.tasks.completed} / {goalsTasksSummary.tasks.total} completed
+                </span>
+              </div>
+              <ProgressBar value={goalsTasksSummary.tasks.completionPercent} />
+
+              {goalsTasksSummary.tasks.next && (
+                <div className="mt-4 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
+                      Do next
+                    </p>
+                    <ImpactBadge
+                      level={goalsTasksSummary.tasks.next.impact}
+                      label={`${goalsTasksSummary.tasks.next.impact} impact`}
+                    />
+                  </div>
+                  <p className="mt-1 text-sm text-[var(--color-text-primary)]">
+                    {goalsTasksSummary.tasks.next.title}
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+async function AIOpportunitiesCard({
+  organizationId,
+  hasBlueprint,
+  fallbackOpportunities,
+}: {
+  organizationId: string;
+  hasBlueprint: boolean;
+  fallbackOpportunities: GrowthBlueprintData["opportunities"];
+}) {
+  const openOpportunities = await getOpenOpportunities(organizationId);
+  const topDetectedOpportunities = openOpportunities.slice(0, 3);
+
+  if (topDetectedOpportunities.length === 0 && !hasBlueprint) return null;
+
+  return (
+    <Card interactive>
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-lg font-medium text-[var(--color-text-primary)]">AI Opportunities</h2>
+        <Link href="/opportunities" className="text-sm text-[var(--color-accent-text)] hover:underline">
+          View all
+        </Link>
+      </div>
+      {topDetectedOpportunities.length > 0 ? (
+        <ul className="space-y-4">
+          {topDetectedOpportunities.map((o) => (
+            <li key={o.id} className="border-b border-[var(--color-border)] pb-4 last:border-0 last:pb-0">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="font-medium text-[var(--color-text-primary)]">{o.title}</p>
+                <ImpactBadge level={o.estimatedImpact as ImpactLevel} />
+              </div>
+              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{o.summary}</p>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <ul className="space-y-4">
+          {fallbackOpportunities.slice(0, 3).map((o) => (
+            <li key={o.title} className="border-b border-[var(--color-border)] pb-4 last:border-0 last:pb-0">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="font-medium text-[var(--color-text-primary)]">{o.title}</p>
+                <ImpactBadge level={o.priority} label={`${o.priority} priority`} />
+              </div>
+              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{o.description}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+async function CampaignOverviewCard({ organizationId }: { organizationId: string }) {
+  const campaignOverview = await getCampaignOverview(organizationId);
+  return <CampaignOverviewWidget overview={campaignOverview} />;
+}
+
+async function RecentActivityCard({ organizationId }: { organizationId: string }) {
+  const recentEvents = await prisma.event.findMany({
+    where: { organizationId },
+    orderBy: { createdAt: "desc" },
+    take: 6,
+  });
+
+  return (
+    <Card interactive>
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-lg font-medium text-[var(--color-text-primary)]">Recent Activity</h2>
+        <Link href="/memory" className="text-sm text-[var(--color-accent-text)] hover:underline">
+          View all
+        </Link>
+      </div>
+      {recentEvents.length === 0 ? (
+        <p className="text-sm text-[var(--color-text-muted)]">
+          Nothing has happened yet — actions you take across Outrun will show up here.
+        </p>
+      ) : (
+        <ul className="space-y-3">
+          {recentEvents.map((event) => (
+            <li key={event.id} className="flex items-start gap-3">
+              <Badge tone="accent" className="mt-0.5 shrink-0">
+                {eventLabel(event.type)}
+              </Badge>
+              <div>
+                <p className="text-sm text-[var(--color-text-secondary)]">{event.summary}</p>
+                <p className="text-xs text-[var(--color-text-muted)]">
+                  {event.createdAt.toLocaleString()}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
 export default async function DashboardPage() {
   const session = await getCurrentSession();
   if (!session) redirect("/sign-in");
@@ -78,38 +436,21 @@ export default async function DashboardPage() {
   const allOpportunities = blueprint
     ? (blueprint.opportunities as GrowthBlueprintData["opportunities"])
     : [];
-  const opportunities = allOpportunities.slice(0, 3);
 
-  const [
-    health,
-    biggestWin,
-    risks,
-    snapshot,
-    goalsTasksSummary,
-    campaignOverview,
-    streaks,
-    upcomingTasks,
-    notifications,
-    recentEvents,
-    openOpportunities,
-  ] = await Promise.all([
+  // Only what the top of the page (Today's Priority, Business Health,
+  // the greeting's streak line, the sidebar) needs to render is awaited
+  // here. Everything further down — Business Snapshot, Goals & Tasks, AI
+  // Opportunities, Campaign Overview, Recent Activity — fetches inside
+  // its own Suspense boundary below, so a slow secondary query no longer
+  // blocks the entire page behind one big Promise.all.
+  const [health, biggestWin, risks, streaks, upcomingTasks, notifications] = await Promise.all([
     getBusinessHealth(organization.id),
     getBiggestWinThisWeek(organization.id),
     getRisksAndOpportunities(organization.id),
-    getBusinessSnapshot(organization.id),
-    getGoalsTasksSummary(organization.id),
-    getCampaignOverview(organization.id),
     getGrowthStreaks(organization.id),
     getUpcomingTasks(organization.id, 5),
     getRecentNotifications(organization.id, 5),
-    prisma.event.findMany({
-      where: { organizationId: organization.id },
-      orderBy: { createdAt: "desc" },
-      take: 6,
-    }),
-    getOpenOpportunities(organization.id),
   ]);
-  const topDetectedOpportunities = openOpportunities.slice(0, 3);
   const firstName = session.user.name.split(" ")[0] ?? session.user.name;
   const today = new Date();
 
@@ -314,327 +655,37 @@ export default async function DashboardPage() {
         </RevealItem>
 
         <RevealItem>
-        <Card interactive>
-          <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
-            Business Snapshot
-          </h2>
-
-          {/* Hero row — the two dollar figures that actually matter get
-              their own bordered panel and a progress bar where there's a
-              real target to measure against, instead of sitting flush in
-              the same flat grid as every other count. */}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-4">
-              <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
-                Revenue Goal
-              </p>
-              {snapshot.revenueGoal ? (
-                <>
-                  <p className="mt-2 text-2xl font-light text-[var(--color-text-primary)]">
-                    <CountUp value={snapshot.revenueGoal.currentValue} prefix="$" />
-                    <span className="text-sm text-[var(--color-text-muted)]">
-                      {" "}
-                      / ${snapshot.revenueGoal.targetValue.toLocaleString()}
-                    </span>
-                  </p>
-                  <div className="mt-2">
-                    <ProgressBar
-                      value={
-                        snapshot.revenueGoal.targetValue > 0
-                          ? (snapshot.revenueGoal.currentValue / snapshot.revenueGoal.targetValue) * 100
-                          : 0
-                      }
-                    />
-                  </div>
-                </>
-              ) : (
-                <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-                  Not set —{" "}
-                  <Link href="/goals" className="text-[var(--color-accent-text)] hover:underline">
-                    add one on Goals
-                  </Link>
-                </p>
-              )}
-            </div>
-
-            <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-4">
-              <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
-                Pipeline Value
-              </p>
-              {snapshot.pipelineValue ? (
-                <>
-                  <p className="mt-2 text-2xl font-light text-[var(--color-text-primary)]">
-                    <CountUp value={snapshot.pipelineValue.estimate} prefix="$" />
-                  </p>
-                  <p className="mt-2 text-xs text-[var(--color-text-muted)]">
-                    {snapshot.pipelineValue.qualifiedCount} qualified lead
-                    {snapshot.pipelineValue.qualifiedCount === 1 ? "" : "s"} × $
-                    {snapshot.pipelineValue.avgCustomerValue.toLocaleString()} avg deal size
-                  </p>
-                </>
-              ) : (
-                <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-                  Not tracked yet — needs an average deal size and at least one Qualified contact
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Secondary metrics — consistent size, one glance to scan. */}
-          <div className="mt-5 grid grid-cols-2 gap-4 border-t border-[var(--color-border)] pt-5 sm:grid-cols-4">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
-                Campaigns Running
-              </p>
-              <p className="text-2xl font-light text-[var(--color-text-primary)]">
-                <CountUp value={snapshot.campaignsRunning} />
-              </p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
-                Reply Rate
-              </p>
-              {snapshot.replyRate != null ? (
-                <p className="text-2xl font-light text-[var(--color-text-primary)]">
-                  <CountUp value={snapshot.replyRate} suffix="%" />
-                </p>
-              ) : (
-                <p className="text-sm text-[var(--color-text-muted)]">No outreach sent yet</p>
-              )}
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
-                Positive Replies
-              </p>
-              <p className="text-2xl font-light text-[var(--color-text-primary)]">
-                <CountUp value={snapshot.positiveReplies} />
-              </p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
-                Customers Won
-              </p>
-              <p className="text-2xl font-light text-[var(--color-text-primary)]">
-                <CountUp value={snapshot.customersWon} />
-              </p>
-            </div>
-          </div>
-
-          {/* Footer — context, not competing for attention with real
-              metrics. Meetings Booked has no real number behind it yet
-              (docs/outrun/04 — never invent a figure), so it reads as a
-              plain note here instead of an empty-looking stat tile. */}
-          <div className="mt-5 flex items-center justify-between border-t border-[var(--color-border)] pt-4 text-xs text-[var(--color-text-muted)]">
-            <span>
-              Plan:{" "}
-              <span className="text-[var(--color-text-secondary)]">{organization.planTier}</span>
-            </span>
-            <span>Meetings booked — not tracked yet</span>
-          </div>
-        </Card>
+          <Suspense fallback={<CardSkeleton title="Business Snapshot" lines={2} />}>
+            <BusinessSnapshotCard organizationId={organization.id} planTier={organization.planTier} />
+          </Suspense>
         </RevealItem>
 
         <RevealItem>
-        <Card interactive>
-          <h2 className="mb-4 text-lg font-medium text-[var(--color-text-primary)]">
-            Goals &amp; Tasks
-          </h2>
-          <div className="grid gap-6 sm:grid-cols-2">
-            <div>
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-[var(--color-text-primary)]">Goals</p>
-                <Link href="/goals" className="text-xs text-[var(--color-accent-text)] hover:underline">
-                  View all →
-                </Link>
-              </div>
-              {goalsTasksSummary.goals.total === 0 ? (
-                <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-                  No goals set yet — add one to track progress here.
-                </p>
-              ) : (
-                <>
-                  <div className="mt-2 mb-1.5 flex items-center justify-between text-sm">
-                    <span className="text-[var(--color-text-secondary)]">
-                      {goalsTasksSummary.goals.active} active
-                      {goalsTasksSummary.goals.abandoned > 0 &&
-                        ` · ${goalsTasksSummary.goals.abandoned} abandoned`}
-                    </span>
-                    <span className="tabular-nums text-[var(--color-text-muted)]">
-                      {goalsTasksSummary.goals.completed} / {goalsTasksSummary.goals.total} completed
-                    </span>
-                  </div>
-                  <ProgressBar value={goalsTasksSummary.goals.completionPercent} />
-
-                  {goalsTasksSummary.goals.upcoming.length > 0 && (
-                    <ul className="mt-4 space-y-3">
-                      {goalsTasksSummary.goals.upcoming.map((goal) => (
-                        <li key={goal.id}>
-                          <div className="flex items-center justify-between gap-2 text-xs">
-                            <span className="truncate text-[var(--color-text-secondary)]">
-                              {goal.title}
-                            </span>
-                            {goal.targetDate && (
-                              <span
-                                className={cn(
-                                  "shrink-0 tabular-nums",
-                                  goal.isOverdue
-                                    ? "text-[var(--color-error-text)]"
-                                    : "text-[var(--color-text-muted)]",
-                                )}
-                              >
-                                {goal.isOverdue ? "Overdue" : `Due ${goal.targetDate.toLocaleDateString()}`}
-                              </span>
-                            )}
-                          </div>
-                          {goal.progressPercent != null && (
-                            <div className="mt-1">
-                              <ProgressBar value={goal.progressPercent} />
-                            </div>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </>
-              )}
-            </div>
-            <div>
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-[var(--color-text-primary)]">Growth Tasks</p>
-                <Link href="/tasks" className="text-xs text-[var(--color-accent-text)] hover:underline">
-                  View all →
-                </Link>
-              </div>
-              {goalsTasksSummary.tasks.total === 0 ? (
-                <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-                  No tasks yet — they&apos;re generated from your Growth Blueprint.
-                </p>
-              ) : (
-                <>
-                  <div className="mt-2 mb-1.5 flex items-center justify-between text-sm">
-                    <span className="text-[var(--color-text-secondary)]">
-                      {goalsTasksSummary.tasks.pending} pending
-                      {goalsTasksSummary.tasks.dismissed > 0 &&
-                        ` · ${goalsTasksSummary.tasks.dismissed} dismissed`}
-                    </span>
-                    <span className="tabular-nums text-[var(--color-text-muted)]">
-                      {goalsTasksSummary.tasks.completed} / {goalsTasksSummary.tasks.total} completed
-                    </span>
-                  </div>
-                  <ProgressBar value={goalsTasksSummary.tasks.completionPercent} />
-
-                  {goalsTasksSummary.tasks.next && (
-                    <div className="mt-4 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
-                          Do next
-                        </p>
-                        <ImpactBadge
-                          level={goalsTasksSummary.tasks.next.impact}
-                          label={`${goalsTasksSummary.tasks.next.impact} impact`}
-                        />
-                      </div>
-                      <p className="mt-1 text-sm text-[var(--color-text-primary)]">
-                        {goalsTasksSummary.tasks.next.title}
-                      </p>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-        </Card>
-        </RevealItem>
-
-        {(topDetectedOpportunities.length > 0 || blueprint) && (
-          <RevealItem>
-          <Card interactive>
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-medium text-[var(--color-text-primary)]">
-                AI Opportunities
-              </h2>
-              <Link
-                href="/opportunities"
-                className="text-sm text-[var(--color-accent-text)] hover:underline"
-              >
-                View all
-              </Link>
-            </div>
-            {topDetectedOpportunities.length > 0 ? (
-              <ul className="space-y-4">
-                {topDetectedOpportunities.map((o) => (
-                  <li
-                    key={o.id}
-                    className="border-b border-[var(--color-border)] pb-4 last:border-0 last:pb-0"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="font-medium text-[var(--color-text-primary)]">{o.title}</p>
-                      <ImpactBadge level={o.estimatedImpact as ImpactLevel} />
-                    </div>
-                    <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-                      {o.summary}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <ul className="space-y-4">
-                {opportunities.map((o) => (
-                  <li
-                    key={o.title}
-                    className="border-b border-[var(--color-border)] pb-4 last:border-0 last:pb-0"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="font-medium text-[var(--color-text-primary)]">{o.title}</p>
-                      <ImpactBadge level={o.priority} label={`${o.priority} priority`} />
-                    </div>
-                    <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-                      {o.description}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
-          </RevealItem>
-        )}
-
-        <RevealItem>
-          <CampaignOverviewWidget overview={campaignOverview} />
+          <Suspense fallback={<CardSkeleton title="Goals & Tasks" />}>
+            <GoalsTasksCard organizationId={organization.id} />
+          </Suspense>
         </RevealItem>
 
         <RevealItem>
-        <Card interactive>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-medium text-[var(--color-text-primary)]">
-              Recent Activity
-            </h2>
-            <Link href="/memory" className="text-sm text-[var(--color-accent-text)] hover:underline">
-              View all
-            </Link>
-          </div>
-          {recentEvents.length === 0 ? (
-            <p className="text-sm text-[var(--color-text-muted)]">
-              Nothing has happened yet — actions you take across Outrun will show up here.
-            </p>
-          ) : (
-            <ul className="space-y-3">
-              {recentEvents.map((event) => (
-                <li key={event.id} className="flex items-start gap-3">
-                  <Badge tone="accent" className="mt-0.5 shrink-0">
-                    {eventLabel(event.type)}
-                  </Badge>
-                  <div>
-                    <p className="text-sm text-[var(--color-text-secondary)]">{event.summary}</p>
-                    <p className="text-xs text-[var(--color-text-muted)]">
-                      {event.createdAt.toLocaleString()}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
+          <Suspense fallback={<CardSkeleton title="AI Opportunities" />}>
+            <AIOpportunitiesCard
+              organizationId={organization.id}
+              hasBlueprint={Boolean(blueprint)}
+              fallbackOpportunities={allOpportunities}
+            />
+          </Suspense>
+        </RevealItem>
+
+        <RevealItem>
+          <Suspense fallback={<CardSkeleton title="Campaign Overview" />}>
+            <CampaignOverviewCard organizationId={organization.id} />
+          </Suspense>
+        </RevealItem>
+
+        <RevealItem>
+          <Suspense fallback={<CardSkeleton title="Recent Activity" />}>
+            <RecentActivityCard organizationId={organization.id} />
+          </Suspense>
         </RevealItem>
 
       </RevealGroup>
