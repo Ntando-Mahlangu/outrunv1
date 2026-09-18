@@ -41,12 +41,17 @@ Rules you must follow (non-negotiable):
   no hard selling. Not a shortened copy of the email; write it as its own
   opening message.`;
 
-// docs/outrun/07 "A/B TESTING" — two distinct angles a campaign can split
-// its audience across, so results are genuinely comparable rather than
-// just two random rewrites of the same idea.
-const VARIANT_INSTRUCTIONS: Record<"A" | "B", string> = {
+// docs/outrun/07 "A/B TESTING" — distinct angles a campaign can split its
+// audience across, so results are genuinely comparable rather than just
+// random rewrites of the same idea. Three, not two, so a test isn't
+// forced into a single either/or framing.
+export const VARIANT_LABELS = ["A", "B", "C"] as const;
+export type VariantLabel = (typeof VARIANT_LABELS)[number];
+
+const VARIANT_INSTRUCTIONS: Record<VariantLabel, string> = {
   A: "For this version, open by directly naming their most likely pain point from the research — matter-of-fact and empathetic — before introducing the sender.",
   B: "For this version, open by naming a specific growth opportunity or possibility for their business from the research — framed positively — before introducing the sender.",
+  C: "For this version, open with a sharp, specific observation from the research stated as a plain fact with no editorializing, then pivot straight to the sender's angle — terse and direct, no warm-up.",
 };
 
 function buildUserMessage(input: {
@@ -76,7 +81,7 @@ export async function generateOutreach(
   companyId: string,
   organizationId: string,
   campaignId?: string,
-  variant?: "A" | "B",
+  variant?: VariantLabel,
 ) {
   const company = await companyRepository.findByIdForOrg(organizationId, companyId);
   if (!company) {

@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FormError } from "@/components/ui/form-error";
+import { cn } from "@/lib/cn";
 
 type MessageWithCompany = OutreachMessage & { company: Company };
 
@@ -416,7 +417,7 @@ export function CampaignSendPanel({
   );
 }
 
-function computeVariantStats(messages: MessageWithCompany[], label: "A" | "B") {
+function computeVariantStats(messages: MessageWithCompany[], label: string) {
   const variantMessages = messages.filter((m) => m.variantLabel === label);
   const sent = variantMessages.filter((m) => m.sendStatus === "SENT");
   const replies = sent.filter((m) => m.gotReply).length;
@@ -429,16 +430,22 @@ function computeVariantStats(messages: MessageWithCompany[], label: "A" | "B") {
   };
 }
 
+// Reads whichever variant labels are actually present on this campaign's
+// messages, sorted, instead of assuming exactly "A"/"B" — a campaign can
+// have up to three (docs/outrun/07 "A/B TESTING").
 function VariantComparison({ messages }: { messages: MessageWithCompany[] }) {
-  const a = computeVariantStats(messages, "A");
-  const b = computeVariantStats(messages, "B");
-  const variants = [a, b];
+  const labels = Array.from(
+    new Set(messages.map((m) => m.variantLabel).filter((l): l is string => Boolean(l))),
+  ).sort();
+  const variants = labels.map((label) => computeVariantStats(messages, label));
 
-  const totalSent = a.sent + b.sent;
+  const totalSent = variants.reduce((sum, v) => sum + v.sent, 0);
   const enoughData = totalSent >= MIN_SENT_FOR_COMPARISON;
+  const ratedVariants = variants.filter((v): v is typeof v & { replyRate: number } => v.replyRate !== null);
+  const hasSpread = new Set(ratedVariants.map((v) => v.replyRate)).size > 1;
   const leading =
-    enoughData && a.replyRate !== null && b.replyRate !== null && a.replyRate !== b.replyRate
-      ? (a.replyRate > b.replyRate ? a : b).label
+    enoughData && hasSpread
+      ? ratedVariants.reduce((best, v) => (v.replyRate > best.replyRate ? v : best)).label
       : null;
 
   return (
@@ -451,7 +458,7 @@ function VariantComparison({ messages }: { messages: MessageWithCompany[] }) {
         have inbox access, so this only reflects what you tell it.
       </p>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+      <div className={cn("mt-4 grid gap-4", variants.length >= 3 ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
         {variants.map((v) => (
           <div
             key={v.label}
@@ -475,7 +482,7 @@ function VariantComparison({ messages }: { messages: MessageWithCompany[] }) {
 
       {!enoughData && (
         <p className="mt-3 text-xs text-[var(--color-text-muted)]">
-          Send at least {MIN_SENT_FOR_COMPARISON} messages across both variants before drawing
+          Send at least {MIN_SENT_FOR_COMPARISON} messages across all variants before drawing
           conclusions — right now the sample is too small to mean much.
         </p>
       )}
