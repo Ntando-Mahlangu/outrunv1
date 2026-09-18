@@ -248,6 +248,30 @@ describe("runOpportunityDetection (integration)", () => {
       });
       expect(opp).toBeNull();
     });
+
+    it("does not surface a follow-up task whose company can no longer be resolved by name", async () => {
+      // The company was renamed/deleted after the task was created — the
+      // task's title still references the old name, which no longer
+      // matches any Company row. Regression test: this must not count
+      // toward the opportunity, since it can never be launched (Launch
+      // re-resolves the same way and would find zero companies).
+      await prisma.task.create({
+        data: {
+          organizationId,
+          title: "Follow up with A Company That No Longer Exists",
+          description: "Asked for a callback.",
+          impact: "High",
+          status: "PENDING",
+          dueDate: daysAgo(3),
+        },
+      });
+
+      await runOpportunityDetection(organizationId);
+      const opp = await prisma.opportunity.findUnique({
+        where: { organizationId_dedupeKey: { organizationId, dedupeKey: "STALLED_CALLBACKS" } },
+      });
+      expect(opp).toBeNull();
+    });
   });
 
   describe("Segment Expansion", () => {

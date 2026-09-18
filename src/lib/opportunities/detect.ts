@@ -198,7 +198,7 @@ async function detectHighFitUncontacted(
 // Stalled Callbacks
 // ============================================================
 
-type StalledCallback = { taskId: string; companyId: string | null; companyName: string; daysOverdue: number };
+type StalledCallback = { taskId: string; companyId: string; companyName: string; daysOverdue: number };
 
 /**
  * A callback the company asked for (src/app/api/prospects/[id]/calls
@@ -208,6 +208,13 @@ type StalledCallback = { taskId: string; companyId: string | null; companyName: 
  * from the task's own title text (the exact template that route writes);
  * if a future change to that template ever changes the wording, this
  * query needs updating alongside it.
+ *
+ * A task whose company can no longer be resolved by name (renamed,
+ * deleted, or name-collided with another company — Company.name has no
+ * uniqueness constraint) is dropped rather than surfaced with a null
+ * companyId: it would otherwise count toward the opportunity but can
+ * never actually be launched, leaving a permanently-stuck "opportunity"
+ * that only Dismiss can clear.
  */
 export async function findStalledCallbacks(organizationId: string): Promise<StalledCallback[]> {
   const tasks = await prisma.task.findMany({
@@ -228,23 +235,26 @@ export async function findStalledCallbacks(organizationId: string): Promise<Stal
   });
   const companyByName = new Map(companies.map((c) => [c.name, c]));
 
-  return tasks.map((t) => {
+  const resolved: StalledCallback[] = [];
+  for (const t of tasks) {
     const name = t.title.slice(FOLLOW_UP_TASK_PREFIX.length);
     const company = companyByName.get(name);
-    return {
+    if (!company) continue;
+    resolved.push({
       taskId: t.id,
-      companyId: company?.id ?? null,
+      companyId: company.id,
       companyName: name,
       daysOverdue: t.dueDate ? daysSince(t.dueDate) : 0,
-    };
-  });
+    });
+  }
+  return resolved;
 }
 
 async function detectStalledCallbacks(organizationId: string): Promise<DetectedCandidate | null> {
   const stalled = await findStalledCallbacks(organizationId);
   if (stalled.length < STALLED_CALLBACK_MIN_COUNT) return null;
 
-  const companyIds = stalled.map((s) => s.companyId).filter((id): id is string => Boolean(id));
+  const companyIds = stalled.map((s) => s.companyId);
   const evidence = stalled
     .slice(0, 5)
     .map((s) => `${s.companyName} — promised a callback, ${s.daysOverdue} day${s.daysOverdue === 1 ? "" : "s"} overdue`);
@@ -519,9 +529,7 @@ export async function resolveCurrentCompanyIds(
     case "HIGH_FIT_UNCONTACTED":
       return (await findHighFitUncontactedCompanies(organizationId)).map((c) => c.id);
     case "STALLED_CALLBACKS":
-      return (await findStalledCallbacks(organizationId))
-        .map((s) => s.companyId)
-        .filter((id): id is string => Boolean(id));
+      return (await findStalledCallbacks(organizationId)).map((s) => s.companyId);
     case "SEGMENT_EXPANSION":
     case "REPLY_RATE_DECLINE":
       return [];

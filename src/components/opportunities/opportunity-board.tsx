@@ -31,6 +31,7 @@ export function OpportunityBoard({
   // stale — never a second source of truth to keep in sync.
   const [resolvedIds, setResolvedIds] = useState<Set<string>>(new Set());
   const [isRescanning, setIsRescanning] = useState(false);
+  const [rescanError, setRescanError] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const open = initialOpen.filter((o) => !resolvedIds.has(o.id));
 
@@ -40,9 +41,16 @@ export function OpportunityBoard({
 
   async function rescan() {
     setIsRescanning(true);
+    setRescanError(null);
     try {
-      await fetch("/api/opportunities/detect", { method: "POST" });
+      const res = await fetch("/api/opportunities/detect", { method: "POST" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error ?? "Couldn't rescan for opportunities right now.");
+      }
       router.refresh();
+    } catch (err) {
+      setRescanError(err instanceof Error ? err.message : "Couldn't rescan for opportunities right now.");
     } finally {
       setIsRescanning(false);
     }
@@ -60,6 +68,8 @@ export function OpportunityBoard({
           {isRescanning ? "Scanning…" : "Rescan"}
         </Button>
       </div>
+
+      {rescanError && <p className="text-sm text-[var(--color-error-text)]">{rescanError}</p>}
 
       {open.length === 0 ? (
         <Card>
