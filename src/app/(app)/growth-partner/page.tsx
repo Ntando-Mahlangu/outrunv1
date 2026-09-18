@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getCurrentSession } from "@/lib/session";
 import { getCurrentOrganization } from "@/lib/org";
-import { prisma } from "@/lib/prisma";
+import { getRecentChatHistory } from "@/lib/growth-partner/chat";
 import { ChatPanel } from "@/components/growth-partner/chat-panel";
 import { RiskPanel } from "@/components/growth-partner/risk-panel";
 import { WhatIfPanel } from "@/components/growth-partner/whatif-panel";
@@ -26,10 +26,7 @@ export default async function GrowthPartnerPage({
   const { ask } = await searchParams;
 
   const [history, signals, opportunities] = await Promise.all([
-    prisma.chatMessage.findMany({
-      where: { organizationId: organization.id },
-      orderBy: { createdAt: "asc" },
-    }),
+    getRecentChatHistory(organization.id),
     getRisksAndOpportunities(organization.id),
     getOpportunityFeed(organization.id),
   ]);

@@ -27,6 +27,24 @@ Current business context:
 
 const HISTORY_LIMIT = 20;
 
+// How many past messages the chat UI itself loads on page load (the
+// widget in the app shell and the full Growth Partner page) — a larger
+// window than HISTORY_LIMIT since this only affects what's displayed,
+// not the AI's token budget. Without a cap, a long-lived workspace's
+// entire chat history gets fetched and rendered on every single page
+// load across the app.
+const DISPLAY_HISTORY_LIMIT = 100;
+
+export async function getRecentChatHistory(organizationId: string) {
+  const history = await prisma.chatMessage.findMany({
+    where: { organizationId },
+    orderBy: { createdAt: "desc" },
+    take: DISPLAY_HISTORY_LIMIT,
+    select: { role: true, content: true },
+  });
+  return history.reverse();
+}
+
 export async function askGrowthPartner(organizationId: string, userMessage: string) {
   const [context, history] = await Promise.all([
     getBusinessContext(organizationId),

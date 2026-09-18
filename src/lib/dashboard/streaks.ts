@@ -10,6 +10,17 @@ function dayKey(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
+// Comfortably longer than any streak this UI meaningfully distinguishes —
+// a bound on the query's time WINDOW, not on how many events it returns.
+// A row-count cap (the previous approach) undercounts the streak for an
+// active org: a handful of busy days can fill a fixed row limit on their
+// own, silently pushing an actually-active earlier day out of the
+// fetched set and truncating the streak walk before it reaches that day.
+// A time window has no such failure mode — every day in range is
+// represented by at least one row regardless of how many events any
+// single day produced.
+const STREAK_LOOKBACK_DAYS = 400;
+
 // docs/outrun/04 "STREAK SYSTEM" ties the Growth Streak to completing
 // "your Growth Mission" each day, but nothing persists a per-day
 // mission-completion record. Rather than fabricate that signal, the
@@ -20,9 +31,11 @@ function dayKey(date: Date): string {
 export async function getGrowthStreaks(organizationId: string): Promise<GrowthStreaks> {
   const [recentEvents, weeklyReviewsCompleted, campaignsLaunched] = await Promise.all([
     prisma.event.findMany({
-      where: { organizationId },
+      where: {
+        organizationId,
+        createdAt: { gte: new Date(Date.now() - STREAK_LOOKBACK_DAYS * 86_400_000) },
+      },
       orderBy: { createdAt: "desc" },
-      take: 500,
       select: { createdAt: true },
     }),
     prisma.strategicReview.count({ where: { organizationId, period: "WEEKLY" } }),

@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/lib/session";
 import { getCurrentOrganization, getUserMemberships } from "@/lib/org";
-import { prisma } from "@/lib/prisma";
 import { SidebarNav } from "@/components/dashboard/sidebar-nav";
 import { SignOutButton } from "@/components/sign-out-button";
 import { WorkspaceSwitcher } from "@/components/team/workspace-switcher";
@@ -10,6 +9,7 @@ import { GlobalSearch } from "@/components/dashboard/global-search";
 import { GlobalChatWidget } from "@/components/growth-partner/global-chat-widget";
 import { Logo } from "@/components/brand/logo";
 import { GenerativeLattice } from "@/components/motion/backgrounds";
+import { getRecentChatHistory } from "@/lib/growth-partner/chat";
 
 export default async function DashboardLayout({
   children,
@@ -25,13 +25,7 @@ export default async function DashboardLayout({
     getUserMemberships(session.user.id),
   ]);
 
-  const chatHistory = organization
-    ? await prisma.chatMessage.findMany({
-        where: { organizationId: organization.id },
-        orderBy: { createdAt: "asc" },
-        select: { role: true, content: true },
-      })
-    : [];
+  const chatHistory = organization ? await getRecentChatHistory(organization.id) : [];
 
   return (
     <div className="relative min-h-screen bg-[var(--color-bg-primary)] print:bg-white">

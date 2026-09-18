@@ -14,6 +14,12 @@ function diffCategories(previous: ScoreCategories, current: ScoreCategories) {
     .filter((d): d is NonNullable<typeof d> => d !== null);
 }
 
+// Most-recent events shown per version gap, not every event logged in
+// that window — a long-lived, active org can easily log hundreds of
+// events between two Blueprint regenerations, and this page renders one
+// line per event.
+const MAX_EVENTS_PER_GAP = 15;
+
 /**
  * docs/outrun/05 "VERSION HISTORY" — score changes plus the actual
  * Business Brain events logged between two versions, so a change is
@@ -29,10 +35,21 @@ export async function getBlueprintHistory(organizationId: string) {
   });
   if (versions.length === 0) return [];
 
-  const events = await prisma.event.findMany({
-    where: { organizationId },
-    orderBy: { createdAt: "asc" },
-  });
+  // One bounded query per version gap rather than pulling every Event the
+  // org has ever logged into memory and filtering in JS — the previous
+  // approach did O(versions x events) work and scaled with the org's
+  // entire lifetime event count, not just what this page actually shows.
+  const eventsPerGap = await Promise.all(
+    versions.map((current, i) => {
+      const previous = versions[i - 1];
+      if (!previous) return Promise.resolve([]);
+      return prisma.event.findMany({
+        where: { organizationId, createdAt: { gt: previous.createdAt, lte: current.createdAt } },
+        orderBy: { createdAt: "desc" },
+        take: MAX_EVENTS_PER_GAP,
+      });
+    }),
+  );
 
   return versions
     .map((current, i) => {
@@ -43,9 +60,6 @@ export async function getBlueprintHistory(organizationId: string) {
             current.scoreCategories as ScoreCategories,
           )
         : [];
-      const eventsSince = previous
-        ? events.filter((e) => e.createdAt > previous.createdAt && e.createdAt <= current.createdAt)
-        : [];
 
       return {
         version: current.version,
@@ -53,7 +67,7 @@ export async function getBlueprintHistory(organizationId: string) {
         previousGrowthScore: previous?.growthScore ?? null,
         createdAt: current.createdAt,
         categoryDeltas,
-        eventsSince,
+        eventsSince: eventsPerGap[i] ?? [],
       };
     })
     .reverse();
