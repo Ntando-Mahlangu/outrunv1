@@ -3,6 +3,7 @@ import { getAIProvider } from "@/lib/ai";
 import { getBusinessContext, formatBusinessContext } from "@/lib/memory/context";
 import { UserFacingError } from "@/lib/errors";
 import { logEvent, EventType } from "@/lib/memory/log-event";
+import { saveGrowthPartnerQuery } from "./query-history";
 import { decisionSchema, decisionJsonSchema, type DecisionData } from "./decision-schema";
 
 const SYSTEM_PROMPT = `You are Outrun's AI Growth Partner running its Decision Engine (docs/outrun/10
@@ -53,11 +54,10 @@ export async function getDecision(organizationId: string, question: string) {
     toolName: "decision_recommendation",
   });
 
-  await logEvent(
-    organizationId,
-    EventType.DECISION_REQUESTED,
-    `Asked the Decision Engine: "${question}"`,
-  );
+  await Promise.all([
+    logEvent(organizationId, EventType.DECISION_REQUESTED, `Asked the Decision Engine: "${question}"`),
+    saveGrowthPartnerQuery(organizationId, "DECISION", question, data),
+  ]);
 
   return data;
 }

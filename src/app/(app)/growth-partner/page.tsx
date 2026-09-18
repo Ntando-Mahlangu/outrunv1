@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getCurrentSession } from "@/lib/session";
 import { getCurrentOrganization } from "@/lib/org";
 import { getRecentChatHistory } from "@/lib/growth-partner/chat";
+import { getRecentGrowthPartnerQueries } from "@/lib/growth-partner/query-history";
 import { ChatPanel } from "@/components/growth-partner/chat-panel";
 import { RiskPanel } from "@/components/growth-partner/risk-panel";
 import { WhatIfPanel } from "@/components/growth-partner/whatif-panel";
@@ -10,6 +11,8 @@ import { OpportunityFeedPanel } from "@/components/growth-partner/opportunity-fe
 import { DecisionPanel } from "@/components/growth-partner/decision-panel";
 import { getRisksAndOpportunities } from "@/lib/growth-partner/risks";
 import { getOpportunityFeed } from "@/lib/growth-partner/opportunity-feed";
+import type { DecisionData } from "@/lib/growth-partner/decision-schema";
+import type { WhatIfData } from "@/lib/growth-partner/whatif-schema";
 import { SplitHeading } from "@/components/motion/split-heading";
 
 export default async function GrowthPartnerPage({
@@ -25,10 +28,12 @@ export default async function GrowthPartnerPage({
 
   const { ask } = await searchParams;
 
-  const [history, signals, opportunities] = await Promise.all([
+  const [history, signals, opportunities, decisionHistory, whatIfHistory] = await Promise.all([
     getRecentChatHistory(organization.id),
     getRisksAndOpportunities(organization.id),
     getOpportunityFeed(organization.id),
+    getRecentGrowthPartnerQueries<DecisionData>(organization.id, "DECISION"),
+    getRecentGrowthPartnerQueries<WhatIfData>(organization.id, "WHAT_IF"),
   ]);
 
   return (
@@ -56,9 +61,23 @@ export default async function GrowthPartnerPage({
 
       <OpportunityFeedPanel items={opportunities} />
 
-      <DecisionPanel />
+      <DecisionPanel
+        initialHistory={decisionHistory.map((q) => ({
+          id: q.id,
+          question: q.question,
+          result: q.result,
+          createdAt: q.createdAt.toISOString(),
+        }))}
+      />
 
-      <WhatIfPanel />
+      <WhatIfPanel
+        initialHistory={whatIfHistory.map((q) => ({
+          id: q.id,
+          question: q.question,
+          result: q.result,
+          createdAt: q.createdAt.toISOString(),
+        }))}
+      />
 
       <ChatPanel
         initialMessages={history.map((m) => ({ role: m.role, content: m.content }))}

@@ -212,6 +212,7 @@ model Organization {
   apiKeys          ApiKey[]
   webhookEndpoints WebhookEndpoint[]
   opportunities    Opportunity[]
+  growthPartnerQueries GrowthPartnerQuery[]
 
   @@map("organization")
 }
@@ -1134,6 +1135,32 @@ model Opportunity {
   @@unique([organizationId, dedupeKey])
   @@index([organizationId, status])
   @@map("opportunity")
+}
+
+enum GrowthPartnerQueryType {
+  DECISION
+  WHAT_IF
+}
+
+// docs/outrun/10 "DECISION ENGINE" / "WHAT-IF SIMULATOR". Both were
+// previously computed and shown once, then lost on refresh — only the
+// question text survived, via a generic Event row. `result` is the full
+// structured AI output (DecisionData or WhatIfData, by `type`), so past
+// recommendations/simulations stay reviewable instead of needing to be
+// re-asked.
+model GrowthPartnerQuery {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  type     GrowthPartnerQueryType
+  question String
+  result   Json
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId, type, createdAt])
+  @@map("growth_partner_query")
 }
 
 // docs/outrun/10 "GOAL MANAGEMENT" — "Users define goals... Every

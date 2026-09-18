@@ -3,6 +3,7 @@ import { getAIProvider } from "@/lib/ai";
 import { getBusinessContext, formatBusinessContext } from "@/lib/memory/context";
 import { UserFacingError } from "@/lib/errors";
 import { logEvent, EventType } from "@/lib/memory/log-event";
+import { saveGrowthPartnerQuery } from "./query-history";
 import { whatIfSchema, whatIfJsonSchema, type WhatIfData } from "./whatif-schema";
 
 const SYSTEM_PROMPT = `You are Outrun's AI Growth Partner running a What-If Simulation (docs/outrun/10
@@ -50,11 +51,10 @@ export async function runWhatIfSimulation(organizationId: string, question: stri
     toolName: "whatif_simulation",
   });
 
-  await logEvent(
-    organizationId,
-    EventType.WHATIF_SIMULATED,
-    `Ran a what-if simulation: "${question}"`,
-  );
+  await Promise.all([
+    logEvent(organizationId, EventType.WHATIF_SIMULATED, `Ran a what-if simulation: "${question}"`),
+    saveGrowthPartnerQuery(organizationId, "WHAT_IF", question, data),
+  ]);
 
   return data;
 }
