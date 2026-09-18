@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { ImpactBadge, Badge } from "@/components/ui/badge";
 import { ScoreGauge } from "@/components/growth-blueprint/score-gauge";
@@ -24,6 +25,13 @@ type BlueprintFields = {
   scoreCategories: GrowthBlueprintData["scoreCategories"];
 };
 
+// Every roadmap item is persisted as its own Task at generation time
+// (src/lib/tasks/generate-from-blueprint.ts) — this maps each item's
+// action text to that Task's id, so "Start Task" links straight to
+// where it can actually be worked (not just read). Omitted entirely on
+// the public share page, which has no task list to link to.
+type RoadmapTaskLinks = Record<string, string>;
+
 const HORIZONS: GrowthBlueprintData["roadmap"][number]["horizon"][] = [
   "Today",
   "This Week",
@@ -40,9 +48,11 @@ const HORIZONS: GrowthBlueprintData["roadmap"][number]["horizon"][] = [
 export function BlueprintView({
   organizationName,
   blueprint,
+  roadmapTaskLinks,
 }: {
   organizationName: string;
   blueprint: BlueprintFields;
+  roadmapTaskLinks?: RoadmapTaskLinks;
 }) {
   const {
     businessSnapshot: snapshot,
@@ -332,17 +342,28 @@ export function BlueprintView({
               <ul className="space-y-3">
                 {roadmap
                   .filter((item) => item.horizon === horizon)
-                  .map((item) => (
-                    <li
-                      key={item.action}
-                      className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-3"
-                    >
-                      <p className="text-sm font-medium text-[var(--color-text-primary)]">
-                        {item.action}
-                      </p>
-                      <p className="mt-1 text-xs text-[var(--color-text-muted)]">{item.reason}</p>
-                    </li>
-                  ))}
+                  .map((item) => {
+                    const taskId = roadmapTaskLinks?.[item.action];
+                    return (
+                      <li
+                        key={item.action}
+                        className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-3"
+                      >
+                        <p className="text-sm font-medium text-[var(--color-text-primary)]">
+                          {item.action}
+                        </p>
+                        <p className="mt-1 text-xs text-[var(--color-text-muted)]">{item.reason}</p>
+                        {taskId && (
+                          <Link
+                            href={`/tasks?taskId=${taskId}`}
+                            className="mt-2 inline-block text-xs font-medium text-[var(--color-accent-text)] hover:underline print:hidden"
+                          >
+                            Start Task →
+                          </Link>
+                        )}
+                      </li>
+                    );
+                  })}
               </ul>
             </div>
           ))}

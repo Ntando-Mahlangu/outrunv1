@@ -35,13 +35,22 @@ export default async function BlueprintPage({
     prisma.growthBlueprint.count({ where: { organizationId: organization.id } }),
   ]);
 
-  const previousBlueprint = blueprint
-    ? await prisma.growthBlueprint.findFirst({
-        where: { organizationId: organization.id, version: { lt: blueprint.version } },
-        orderBy: { version: "desc" },
-        select: { growthScore: true },
-      })
-    : null;
+  const [previousBlueprint, roadmapTasks] = await Promise.all([
+    blueprint
+      ? prisma.growthBlueprint.findFirst({
+          where: { organizationId: organization.id, version: { lt: blueprint.version } },
+          orderBy: { version: "desc" },
+          select: { growthScore: true },
+        })
+      : null,
+    blueprint
+      ? prisma.task.findMany({
+          where: { organizationId: organization.id, sourceBlueprintVersion: blueprint.version },
+          select: { id: true, title: true },
+        })
+      : [],
+  ]);
+  const roadmapTaskLinks = Object.fromEntries(roadmapTasks.map((t) => [t.title, t.id]));
 
   // Shows its own generate/pending state directly, rather than bouncing to
   // Dashboard — landing here from the sidebar with no Blueprint yet used to
@@ -124,6 +133,7 @@ export default async function BlueprintPage({
 
         <BlueprintView
           organizationName={organization.name}
+          roadmapTaskLinks={roadmapTaskLinks}
           blueprint={{
             version: blueprint.version,
             growthScore: blueprint.growthScore,

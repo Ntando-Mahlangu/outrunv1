@@ -26,11 +26,18 @@ export default async function BlueprintHistoryVersionPage({
   // Relative to the version being viewed, not the org's latest — a
   // historical version's trend should compare against what came right
   // before it, not against a version generated much later.
-  const previousBlueprint = await prisma.growthBlueprint.findFirst({
-    where: { organizationId: organization.id, version: { lt: blueprint.version } },
-    orderBy: { version: "desc" },
-    select: { growthScore: true },
-  });
+  const [previousBlueprint, roadmapTasks] = await Promise.all([
+    prisma.growthBlueprint.findFirst({
+      where: { organizationId: organization.id, version: { lt: blueprint.version } },
+      orderBy: { version: "desc" },
+      select: { growthScore: true },
+    }),
+    prisma.task.findMany({
+      where: { organizationId: organization.id, sourceBlueprintVersion: blueprint.version },
+      select: { id: true, title: true },
+    }),
+  ]);
+  const roadmapTaskLinks = Object.fromEntries(roadmapTasks.map((t) => [t.title, t.id]));
 
   return (
     <div className="py-16">
@@ -49,6 +56,7 @@ export default async function BlueprintHistoryVersionPage({
         </a>
         <BlueprintView
           organizationName={organization.name}
+          roadmapTaskLinks={roadmapTaskLinks}
           blueprint={{
             version: blueprint.version,
             growthScore: blueprint.growthScore,

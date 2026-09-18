@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Task, TaskImpact } from "@prisma/client";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,10 +13,18 @@ import type { CoachFeedbackData } from "@/lib/growth-partner/coach-schema";
 import { SplitHeading } from "@/components/motion/split-heading";
 import { Magnetic } from "@/components/motion/magnetic";
 import { readJsonSafely } from "@/lib/fetch-json";
+import { cn } from "@/lib/cn";
 
 const IMPACTS: TaskImpact[] = ["High", "Medium", "Low"];
+const HIGHLIGHT_DURATION_MS = 3000;
 
-export function TasksPageClient({ initialTasks }: { initialTasks: Task[] }) {
+export function TasksPageClient({
+  initialTasks,
+  highlightTaskId,
+}: {
+  initialTasks: Task[];
+  highlightTaskId?: string;
+}) {
   const [tasks, setTasks] = useState(initialTasks);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -24,6 +32,17 @@ export function TasksPageClient({ initialTasks }: { initialTasks: Task[] }) {
   const [error, setError] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [highlightId, setHighlightId] = useState(highlightTaskId ?? null);
+
+  // Arriving here from a Blueprint roadmap item's "Start Task" link —
+  // scroll straight to it and pulse it briefly so it's not lost in the
+  // rest of the pending list.
+  useEffect(() => {
+    if (!highlightId) return;
+    document.getElementById(`task-${highlightId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    const timer = window.setTimeout(() => setHighlightId(null), HIGHLIGHT_DURATION_MS);
+    return () => window.clearTimeout(timer);
+  }, [highlightId]);
 
   const pending = tasks.filter((t) => t.status === "PENDING");
   const done = tasks.filter((t) => t.status !== "PENDING");
@@ -138,7 +157,12 @@ export function TasksPageClient({ initialTasks }: { initialTasks: Task[] }) {
             {pending.map((task) => (
               <li
                 key={task.id}
-                className="border-b border-[var(--color-border)] pb-4 last:border-0 last:pb-0"
+                id={`task-${task.id}`}
+                className={cn(
+                  "border-b border-[var(--color-border)] pb-4 last:border-0 last:pb-0 transition-shadow",
+                  highlightId === task.id &&
+                    "rounded-[var(--radius-md)] border-b-0 ring-2 ring-[var(--color-accent)] ring-offset-2 ring-offset-[var(--color-bg-primary)]",
+                )}
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
