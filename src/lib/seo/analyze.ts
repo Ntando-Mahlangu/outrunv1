@@ -3,7 +3,7 @@ import { getAIProvider } from "@/lib/ai";
 import { UserFacingError } from "@/lib/errors";
 import { logEvent, EventType } from "@/lib/memory/log-event";
 import * as growthBlueprintRepository from "@/lib/repositories/growth-blueprint-repository";
-import { crawlWebsite, type WebsiteSignals } from "./crawl";
+import { crawlWebsiteMultiPage, type WebsiteSignals } from "./crawl";
 import { analyzeLocalSeoSignals, type LocalSeoVerifiedFindings } from "./local-seo";
 import { getSeoMemory, type SeoMemory } from "./memory";
 import { seoAnalysisSchema, seoAnalysisJsonSchema, type SEOAnalysisData } from "./schema";
@@ -13,12 +13,16 @@ const SYSTEM_PROMPT = `You are Outrun's AI SEO Growth Consultant (docs/outrun/09
 plain English for a business owner, not an SEO professional.
 
 Rules you must follow (non-negotiable):
-- Only use the crawled signals given to you (title, meta description,
-  headings, word count, whether contact info/forms were found, link and
-  image counts) plus the business's own description. Never guess at
-  anything you weren't given (page speed, Core Web Vitals, search
-  rankings, backlinks) — these require integrations this app doesn't
-  have yet.
+- Only use the crawled signals given to you — for each page crawled
+  (the homepage plus whichever key pages were found and reachable):
+  title, meta description, headings, word count, whether contact
+  info/forms were found, link and image counts — plus the business's
+  own description. Never guess at anything you weren't given (page
+  speed, Core Web Vitals, search rankings, backlinks) — these require
+  integrations this app doesn't have yet.
+- Only one page was crawled if that's all that's given you (e.g. no
+  sitemap was found) — say so plainly rather than implying a full-site
+  audit happened.
 - Every category score needs a reason grounded in the actual signals.
 - Executive summary: under 300 words, plain English, no jargon.
 - Quick wins should be genuinely quick — things fixable in under an hour.
@@ -37,18 +41,9 @@ Rules you must follow (non-negotiable):
   if it's still clearly the single most important one for this business,
   but the majority of keywordSuggestions and contentIdeas should be new.`;
 
-function buildUserMessage(
-  signals: WebsiteSignals,
-  businessDescription: string,
-  idealCustomer: string,
-  localSeo: LocalSeoVerifiedFindings,
-  memory: SeoMemory,
-) {
+function describePage(signals: WebsiteSignals): string {
   return [
-    `Business: ${businessDescription}`,
-    `Ideal customer: ${idealCustomer}`,
-    "",
-    `Website: ${signals.url}`,
+    `Page: ${signals.url}`,
     `Title tag: ${signals.title ?? "missing"}`,
     `Meta description: ${signals.metaDescription ?? "missing"}`,
     `H1 headings: ${signals.h1s.join(" | ") || "none found"}`,
@@ -58,6 +53,24 @@ function buildUserMessage(
     `Form found: ${signals.hasForm ? "yes" : "no"}`,
     `Link count: ${signals.linkCount}`,
     `Images: ${signals.imageCount} (${signals.imagesMissingAlt} missing alt text)`,
+  ].join("\n");
+}
+
+function buildUserMessage(
+  pages: WebsiteSignals[],
+  businessDescription: string,
+  idealCustomer: string,
+  localSeo: LocalSeoVerifiedFindings,
+  memory: SeoMemory,
+) {
+  return [
+    `Business: ${businessDescription}`,
+    `Ideal customer: ${idealCustomer}`,
+    "",
+    `${pages.length} page${pages.length === 1 ? "" : "s"} crawled` +
+      (pages.length === 1 ? " (no other key pages were found via the site's sitemap)." : ":"),
+    "",
+    pages.map(describePage).join("\n\n"),
     "",
     localSeo.applicable
       ? `This business serves a specific local area. Verified findings:\n${localSeo.findings.map((f) => `- ${f}`).join("\n")}`
@@ -88,7 +101,7 @@ export async function analyzeSEO(organizationId: string) {
     );
   }
 
-  const signals = await crawlWebsite(organization.website);
+  const { pages } = await crawlWebsiteMultiPage(organization.website);
 
   const latestBlueprint = await growthBlueprintRepository.findLatestIcpForOrg(organizationId);
   const icp = (latestBlueprint?.idealCustomerProfile ??
@@ -96,7 +109,7 @@ export async function analyzeSEO(organizationId: string) {
   const localSeo = analyzeLocalSeoSignals({
     sellingLocations: organization.businessProfile.sellingLocations,
     inferredLocation: icp?.location ?? null,
-    signals,
+    signals: pages,
   });
   const memory = await getSeoMemory(organizationId);
 
@@ -107,7 +120,7 @@ export async function analyzeSEO(organizationId: string) {
       {
         role: "user",
         content: buildUserMessage(
-          signals,
+          pages,
           organization.businessProfile.description,
           organization.businessProfile.idealCustomer,
           localSeo,

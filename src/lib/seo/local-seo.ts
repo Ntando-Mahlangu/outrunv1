@@ -21,7 +21,10 @@ export type LocalSeoVerifiedFindings = {
 export function analyzeLocalSeoSignals(input: {
   sellingLocations: string[];
   inferredLocation: string | null;
-  signals: WebsiteSignals;
+  /** One or more crawled pages — a street address or Maps embed is just
+   * as often on a Contact page as the homepage, so a finding counts if
+   * ANY crawled page shows it, not just the first one. */
+  signals: WebsiteSignals[];
 }): LocalSeoVerifiedFindings {
   const applicable = input.sellingLocations.includes("Local");
   if (!applicable) {
@@ -37,7 +40,7 @@ export function analyzeLocalSeoSignals(input: {
   const findings: string[] = [];
 
   if (inferredLocation) {
-    const mentioned = input.signals.bodyTextLower.includes(inferredLocation.toLowerCase());
+    const mentioned = input.signals.some((s) => s.bodyTextLower.includes(inferredLocation.toLowerCase()));
     findings.push(
       mentioned
         ? `Your website does mention "${inferredLocation}" — the location your last Growth Blueprint inferred you target.`
@@ -46,13 +49,13 @@ export function analyzeLocalSeoSignals(input: {
   }
 
   findings.push(
-    input.signals.hasGoogleMapsEmbed
+    input.signals.some((s) => s.hasGoogleMapsEmbed)
       ? "Your website has a Google Maps embed."
       : "Your website has no Google Maps embed.",
   );
 
   findings.push(
-    input.signals.hasStreetAddressPattern
+    input.signals.some((s) => s.hasStreetAddressPattern)
       ? "Your website displays a street address."
       : "No street address was found on your website.",
   );

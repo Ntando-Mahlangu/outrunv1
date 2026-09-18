@@ -27,7 +27,7 @@ describe("analyzeLocalSeoSignals", () => {
     const result = analyzeLocalSeoSignals({
       sellingLocations: ["National"],
       inferredLocation: "Austin",
-      signals: signals(),
+      signals: [signals()],
     });
     expect(result.applicable).toBe(false);
     expect(result.findings).toEqual([]);
@@ -37,7 +37,7 @@ describe("analyzeLocalSeoSignals", () => {
     const result = analyzeLocalSeoSignals({
       sellingLocations: ["Local"],
       inferredLocation: "Austin",
-      signals: signals({ bodyTextLower: "no city mentioned here" }),
+      signals: [signals({ bodyTextLower: "no city mentioned here" })],
     });
     expect(result.applicable).toBe(true);
     expect(result.findings).toContain(
@@ -49,7 +49,7 @@ describe("analyzeLocalSeoSignals", () => {
     const result = analyzeLocalSeoSignals({
       sellingLocations: ["Local"],
       inferredLocation: "Austin",
-      signals: signals({ bodyTextLower: "proudly serving austin since 2010" }),
+      signals: [signals({ bodyTextLower: "proudly serving austin since 2010" })],
     });
     expect(result.findings).toContain(
       'Your website does mention "Austin" — the location your last Growth Blueprint inferred you target.',
@@ -60,7 +60,7 @@ describe("analyzeLocalSeoSignals", () => {
     const result = analyzeLocalSeoSignals({
       sellingLocations: ["Local"],
       inferredLocation: "National",
-      signals: signals(),
+      signals: [signals()],
     });
     expect(result.inferredLocation).toBeNull();
     expect(result.findings.some((f) => f.includes("National"))).toBe(false);
@@ -70,7 +70,7 @@ describe("analyzeLocalSeoSignals", () => {
     const result = analyzeLocalSeoSignals({
       sellingLocations: ["Local"],
       inferredLocation: null,
-      signals: signals({ hasGoogleMapsEmbed: true, hasStreetAddressPattern: true }),
+      signals: [signals({ hasGoogleMapsEmbed: true, hasStreetAddressPattern: true })],
     });
     expect(result.findings).toContain("Your website has a Google Maps embed.");
     expect(result.findings).toContain("Your website displays a street address.");
