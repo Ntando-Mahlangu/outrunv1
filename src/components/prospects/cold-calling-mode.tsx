@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import type { Company } from "@prisma/client";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Card } from "@/components/ui/card";
@@ -137,7 +138,14 @@ export function ColdCallingMode({
 
   const totalActioned = stats.MEETING_BOOKED + stats.LEAD_CAPTURED + stats.IGNORED + stats.SAVE_FOR_LATER;
 
-  return (
+  // Rendered via a portal straight to <body>, not in normal flow: the app
+  // shell's header and content column are sibling stacking contexts
+  // (header z-20, content z-10 — see src/app/(app)/layout.tsx), so a
+  // fixed z-50 element nested inside the content column can never
+  // actually beat the header no matter how high its own z-index goes.
+  // Escaping to <body> puts this modal in the root stacking context,
+  // where z-50 correctly wins over the header's z-20.
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -308,6 +316,7 @@ export function ColdCallingMode({
           </div>
         </div>
       )}
-    </div>
+    </div>,
+    document.body,
   );
 }
