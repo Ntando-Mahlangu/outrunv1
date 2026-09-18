@@ -32,6 +32,58 @@ function clampConfidence(n: number): number {
 
 type DetectorContext = { avgCustomerValue: number | null };
 
+// A "company batch" detector groups a set of companies into a Lead List
+// on Launch. Once a company has been handed to the user that way, the
+// same opportunity type shouldn't keep flagging it forever — but a
+// genuinely new company matching the same condition later should still
+// get through. These three types get that "new generation" treatment
+// (see getAlreadyBatchedCompanyIds/nextDedupeKey below); the other two
+// have no "batch of companies" concept, so they keep the simpler
+// cooldown-after-launch behavior a DISMISSED row already gets.
+const GENERATIONAL_TYPES: OpportunityType[] = ["DORMANT_LEADS", "HIGH_FIT_UNCONTACTED", "STALLED_CALLBACKS"];
+
+/**
+ * Companies already grouped into a Lead List from a prior LAUNCHED
+ * opportunity of this type. Excluding them from detection (and from the
+ * fresh re-derivation at Launch time, since these helpers are shared)
+ * means a launch never permanently silences the detector — only the
+ * companies it already acted on stop counting toward it.
+ */
+async function getAlreadyBatchedCompanyIds(organizationId: string, type: OpportunityType): Promise<Set<string>> {
+  const launched = await prisma.opportunity.findMany({
+    where: { organizationId, type, status: "LAUNCHED" },
+    select: { executionResult: true },
+  });
+  const leadListIds = launched
+    .map((o) => (o.executionResult as { leadListId?: string } | null)?.leadListId)
+    .filter((id): id is string => Boolean(id));
+  if (leadListIds.length === 0) return new Set();
+
+  const members = await prisma.leadListCompany.findMany({
+    where: { leadListId: { in: leadListIds } },
+    select: { companyId: true },
+  });
+  return new Set(members.map((m) => m.companyId));
+}
+
+/**
+ * The dedupeKey a fresh candidate of this type should use: reuse
+ * whichever non-LAUNCHED row already represents this type (so the usual
+ * refresh/resurface/cooldown handling in runOpportunityDetection keeps
+ * applying to it), or mint a new one if the only existing row(s) are
+ * LAUNCHED — a new batch of new companies, not a resurfacing of the old.
+ */
+async function nextDedupeKey(organizationId: string, type: OpportunityType, baseKey: string): Promise<string> {
+  const current = await prisma.opportunity.findFirst({
+    where: { organizationId, type, status: { not: "LAUNCHED" } },
+    select: { dedupeKey: true },
+  });
+  if (current) return current.dedupeKey;
+
+  const priorCount = await prisma.opportunity.count({ where: { organizationId, type } });
+  return priorCount === 0 ? baseKey : `${baseKey}:${priorCount + 1}`;
+}
+
 // ============================================================
 // Dormant Leads
 // ============================================================
@@ -48,10 +100,12 @@ type DormantContact = { contactId: string; contactName: string; companyId: strin
  * claim more precise than the schema actually supports.
  */
 export async function findDormantLeadContacts(organizationId: string): Promise<DormantContact[]> {
+  const alreadyBatched = await getAlreadyBatchedCompanyIds(organizationId, "DORMANT_LEADS");
   const contacts = await prisma.contact.findMany({
     where: {
       company: { organizationId },
       relationshipStatus: { in: ["CONTACTED", "RESPONDED", "QUALIFIED"] },
+      ...(alreadyBatched.size > 0 ? { companyId: { notIn: Array.from(alreadyBatched) } } : {}),
     },
     select: {
       id: true,
@@ -127,7 +181,7 @@ async function detectDormantLeads(
 
   return {
     type: "DORMANT_LEADS",
-    dedupeKey: "DORMANT_LEADS",
+    dedupeKey: await nextDedupeKey(organizationId, "DORMANT_LEADS", "DORMANT_LEADS"),
     title: `${dormant.length} dormant lead${dormant.length === 1 ? "" : "s"} need follow-up`,
     summary: `${dormant.length} contact${dormant.length === 1 ? "" : "s"} you already engaged with haven't been touched in ${DORMANT_MIN_DAYS_SINCE_TOUCH}+ days.`,
     whyItMatters:
@@ -153,12 +207,14 @@ type UncontactedCompany = { id: string; name: string; fitScore: number | null };
  * company someone already cold-called isn't "never actioned" just
  * because no email went out. */
 export async function findHighFitUncontactedCompanies(organizationId: string): Promise<UncontactedCompany[]> {
+  const alreadyBatched = await getAlreadyBatchedCompanyIds(organizationId, "HIGH_FIT_UNCONTACTED");
   return prisma.company.findMany({
     where: {
       organizationId,
       fitScore: { gte: UNCONTACTED_MIN_FIT_SCORE },
       outreachMessages: { none: {} },
       callLogs: { none: {} },
+      ...(alreadyBatched.size > 0 ? { id: { notIn: Array.from(alreadyBatched) } } : {}),
     },
     select: { id: true, name: true, fitScore: true },
     orderBy: { fitScore: "desc" },
@@ -179,7 +235,7 @@ async function detectHighFitUncontacted(
 
   return {
     type: "HIGH_FIT_UNCONTACTED",
-    dedupeKey: "HIGH_FIT_UNCONTACTED",
+    dedupeKey: await nextDedupeKey(organizationId, "HIGH_FIT_UNCONTACTED", "HIGH_FIT_UNCONTACTED"),
     title: `${companies.length} high-fit prospect${companies.length === 1 ? "" : "s"} sitting untouched`,
     summary: `${companies.length} companies scored ${UNCONTACTED_MIN_FIT_SCORE}+ Fit Score but have never been called or emailed.`,
     whyItMatters:
@@ -217,6 +273,7 @@ type StalledCallback = { taskId: string; companyId: string; companyName: string;
  * that only Dismiss can clear.
  */
 export async function findStalledCallbacks(organizationId: string): Promise<StalledCallback[]> {
+  const alreadyBatched = await getAlreadyBatchedCompanyIds(organizationId, "STALLED_CALLBACKS");
   const tasks = await prisma.task.findMany({
     where: {
       organizationId,
@@ -239,7 +296,7 @@ export async function findStalledCallbacks(organizationId: string): Promise<Stal
   for (const t of tasks) {
     const name = t.title.slice(FOLLOW_UP_TASK_PREFIX.length);
     const company = companyByName.get(name);
-    if (!company) continue;
+    if (!company || alreadyBatched.has(company.id)) continue;
     resolved.push({
       taskId: t.id,
       companyId: company.id,
@@ -262,7 +319,7 @@ async function detectStalledCallbacks(organizationId: string): Promise<DetectedC
 
   return {
     type: "STALLED_CALLBACKS",
-    dedupeKey: "STALLED_CALLBACKS",
+    dedupeKey: await nextDedupeKey(organizationId, "STALLED_CALLBACKS", "STALLED_CALLBACKS"),
     title: `${stalled.length} overdue callback${stalled.length === 1 ? "" : "s"} — a promise not kept`,
     summary: `${stalled.length} compan${stalled.length === 1 ? "y" : "ies"} asked for a callback and the follow-up is now overdue.`,
     whyItMatters:
@@ -437,7 +494,21 @@ export async function runOpportunityDetection(organizationId: string): Promise<D
     }
 
     if (existing.status === "LAUNCHED") {
-      continue; // never touch a row the user already acted on
+      // A generational type never resurfaces its old row once launched —
+      // new companies matching the same condition get a new row instead,
+      // via nextDedupeKey. Everything else (no "batch of companies"
+      // concept to exclude) falls back to the same cooldown a DISMISSED
+      // row gets, so it isn't suppressed forever.
+      if (GENERATIONAL_TYPES.includes(candidate.type)) continue;
+      const cooledDown = existing.resolvedAt && daysSince(existing.resolvedAt) >= DISMISS_COOLDOWN_DAYS;
+      if (cooledDown) {
+        await prisma.opportunity.update({
+          where: { id: existing.id },
+          data: { status: "DETECTED", detectedAt: new Date(), resolvedAt: null, ...candidateData(candidate) },
+        });
+        result.resurfaced += 1;
+      }
+      continue;
     }
 
     if (existing.status === "EXPIRED") {

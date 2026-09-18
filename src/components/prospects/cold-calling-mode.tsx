@@ -55,19 +55,24 @@ const CALL_LOG_PAYLOAD: Partial<Record<Outcome, { outcome: string; notes: string
   IGNORED: { outcome: "NO_ANSWER", notes: "Call ignored" },
 };
 
-async function recordOutcome(company: Company, outcome: Outcome): Promise<void> {
+// What actually changed as a side effect of logging an outcome — enough
+// to undo it precisely (delete the exact call log created, or flip the
+// save toggle back) rather than guessing at the company's prior state.
+type OutcomeEffect = { callLogId?: string; toggledSave?: boolean };
+
+async function recordOutcome(company: Company, outcome: Outcome): Promise<OutcomeEffect> {
   if (outcome === "SAVE_FOR_LATER") {
     // /api/prospects/[id]/save toggles isSaved — only call it if that
     // actually moves the company toward saved, so re-running this on an
     // already-saved company can't accidentally unsave it.
-    if (company.isSaved) return;
+    if (company.isSaved) return {};
     const res = await fetch(`/api/prospects/${company.id}/save`, { method: "POST" });
     if (!res.ok) throw new Error("Couldn't save this one for later.");
-    return;
+    return { toggledSave: true };
   }
 
   const payload = CALL_LOG_PAYLOAD[outcome];
-  if (!payload) return;
+  if (!payload) return {};
   const res = await fetch(`/api/prospects/${company.id}/calls`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -77,7 +82,40 @@ async function recordOutcome(company: Company, outcome: Outcome): Promise<void> 
     const body = await res.json().catch(() => null);
     throw new Error(body?.error ?? "Couldn't log that call.");
   }
+  const body = await res.json();
+  return { callLogId: body.callLog?.id };
 }
+
+// Undoes exactly what recordOutcome did — deletes the specific call log
+// it created, or flips the save toggle back. If neither effect fired in
+// the first place (e.g. SAVE_FOR_LATER on an already-saved company),
+// there's nothing to undo, and this is a no-op.
+async function undoOutcome(companyId: string, effect: OutcomeEffect): Promise<void> {
+  if (effect.callLogId) {
+    await fetch(`/api/prospects/${companyId}/calls/${effect.callLogId}`, { method: "DELETE" });
+  } else if (effect.toggledSave) {
+    await fetch(`/api/prospects/${companyId}/save`, { method: "POST" });
+  }
+}
+
+const OUTCOME_SHORTCUT_KEYS: Record<string, Outcome> = {
+  "1": "MEETING_BOOKED",
+  "2": "LEAD_CAPTURED",
+  "3": "SAVE_FOR_LATER",
+  "4": "IGNORED",
+};
+
+// Reverse of OUTCOME_SHORTCUT_KEYS, for labeling each button with its key.
+const OUTCOME_KEY_LABEL: Record<Outcome, string> = {
+  MEETING_BOOKED: "1",
+  LEAD_CAPTURED: "2",
+  SAVE_FOR_LATER: "3",
+  IGNORED: "4",
+};
+
+const UNDO_WINDOW_MS = 6000;
+
+type ActionRecord = { id: number; company: Company; outcome: Outcome; effect: OutcomeEffect; atIndex: number };
 
 const SLIDE_VARIANTS = {
   enter: (direction: number) => ({ x: direction > 0 ? 60 : -60, opacity: 0, scale: 0.97 }),
@@ -102,18 +140,12 @@ export function ColdCallingMode({
     IGNORED: 0,
     SAVE_FOR_LATER: 0,
   });
+  const [actions, setActions] = useState<ActionRecord[]>([]);
+  const [pendingUndo, setPendingUndo] = useState<ActionRecord | null>(null);
   const reduceMotion = useReducedMotion();
 
   const company = companies[index];
   const done = index >= companies.length;
-
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onClose]);
 
   function goTo(nextIndex: number, dir: number) {
     setDirection(dir);
@@ -125,9 +157,13 @@ export function ColdCallingMode({
     if (!company || isSubmitting) return;
     setIsSubmitting(true);
     setError(null);
+    const atIndex = index;
     try {
-      await recordOutcome(company, outcome);
+      const effect = await recordOutcome(company, outcome);
       setStats((prev) => ({ ...prev, [outcome]: prev[outcome] + 1 }));
+      const record: ActionRecord = { id: Date.now() + Math.random(), company, outcome, effect, atIndex };
+      setActions((prev) => [...prev, record]);
+      setPendingUndo(record);
       goTo(index + 1, 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -135,6 +171,51 @@ export function ColdCallingMode({
       setIsSubmitting(false);
     }
   }
+
+  async function handleUndo() {
+    if (!pendingUndo) return;
+    const record = pendingUndo;
+    setPendingUndo(null);
+    try {
+      await undoOutcome(record.company.id, record.effect);
+      setStats((prev) => ({ ...prev, [record.outcome]: Math.max(0, prev[record.outcome] - 1) }));
+      setActions((prev) => prev.filter((a) => a.id !== record.id));
+      goTo(record.atIndex, -1);
+    } catch {
+      setError("Couldn't undo that — you can fix it from this company's own page.");
+    }
+  }
+
+  // The undo option is only offered for a few seconds — long enough to
+  // catch a misclick, not so long it reads as a real "edit history."
+  useEffect(() => {
+    if (!pendingUndo) return;
+    const timer = window.setTimeout(() => setPendingUndo(null), UNDO_WINDOW_MS);
+    return () => window.clearTimeout(timer);
+  }, [pendingUndo]);
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (done || isSubmitting || !company) return;
+      if (e.key === "ArrowRight") {
+        goTo(index + 1, 1);
+        return;
+      }
+      if (e.key === "ArrowLeft") {
+        if (index > 0) goTo(index - 1, -1);
+        return;
+      }
+      const outcome = OUTCOME_SHORTCUT_KEYS[e.key];
+      if (outcome) handleOutcome(outcome);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onClose, done, isSubmitting, index, company]);
 
   const totalActioned = stats.MEETING_BOOKED + stats.LEAD_CAPTURED + stats.IGNORED + stats.SAVE_FOR_LATER;
 
@@ -210,6 +291,24 @@ export function ColdCallingMode({
               <p className="mt-4 text-xs text-[var(--color-text-muted)]">
                 {companies.length - totalActioned} skipped without an outcome.
               </p>
+            )}
+            {actions.length > 0 && (
+              <div className="mt-6 max-h-48 overflow-y-auto rounded-[var(--radius-md)] border border-[var(--color-border)] text-left">
+                {actions
+                  .slice()
+                  .reverse()
+                  .map((record) => (
+                    <div
+                      key={record.id}
+                      className="flex items-center justify-between border-b border-[var(--color-border)] px-3 py-2 text-sm last:border-b-0"
+                    >
+                      <span className="truncate text-[var(--color-text-primary)]">{record.company.name}</span>
+                      <span className="ml-3 shrink-0 text-xs text-[var(--color-text-muted)]">
+                        {OUTCOME_CONFIG[record.outcome].label}
+                      </span>
+                    </div>
+                  ))}
+              </div>
             )}
             <Button className="mt-8" onClick={onClose}>
               Done
@@ -306,13 +405,34 @@ export function ColdCallingMode({
                 disabled={isSubmitting}
                 onClick={() => handleOutcome(outcome)}
                 className={cn(
-                  "rounded-[var(--radius-md)] border px-4 py-2.5 text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50",
+                  "relative rounded-[var(--radius-md)] border px-4 py-2.5 text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50",
                   OUTCOME_CONFIG[outcome].className,
                 )}
               >
+                <span className="mr-1.5 inline-flex h-4 w-4 items-center justify-center rounded border border-current/30 font-mono text-[10px] opacity-60">
+                  {OUTCOME_KEY_LABEL[outcome]}
+                </span>
                 {OUTCOME_CONFIG[outcome].label}
               </button>
             ))}
+          </div>
+        </div>
+      )}
+
+      {pendingUndo && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center px-4">
+          <div className="pointer-events-auto flex items-center gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-card)] px-4 py-2.5 text-sm shadow-lg">
+            <span className="text-[var(--color-text-secondary)]">
+              Logged {OUTCOME_CONFIG[pendingUndo.outcome].label.toLowerCase()} for{" "}
+              <span className="text-[var(--color-text-primary)]">{pendingUndo.company.name}</span>
+            </span>
+            <button
+              type="button"
+              onClick={handleUndo}
+              className="font-medium text-[var(--color-accent-text)] hover:underline"
+            >
+              Undo
+            </button>
           </div>
         </div>
       )}

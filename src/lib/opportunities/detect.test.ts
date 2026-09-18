@@ -332,6 +332,68 @@ describe("runOpportunityDetection (integration)", () => {
     });
   });
 
+  describe("Reply Rate Decline", () => {
+    async function seedMessage(companyId: string, sentAt: Date, gotReply: boolean) {
+      return prisma.outreachMessage.create({
+        data: {
+          companyId,
+          subject: "Subject",
+          body: "Body",
+          openingRationale: "Rationale",
+          sendStatus: "SENT",
+          sentAt,
+          gotReply,
+        },
+      });
+    }
+
+    it("detects a reply rate decline of 10+ points across two 14-day windows", async () => {
+      const company = await seedCompany("reply-decline-co");
+      for (let i = 0; i < 5; i++) {
+        await seedMessage(company.id, daysAgo(3), false); // recent: 0% reply
+      }
+      for (let i = 0; i < 5; i++) {
+        await seedMessage(company.id, daysAgo(20), true); // prior: 100% reply
+      }
+
+      const result = await runOpportunityDetection(organizationId);
+      expect(result.created).toBe(1);
+
+      const opp = await prisma.opportunity.findUniqueOrThrow({
+        where: { organizationId_dedupeKey: { organizationId, dedupeKey: "REPLY_RATE_DECLINE" } },
+      });
+      expect(opp.actionType).toBe("REVIEW_ONLY");
+    });
+
+    it("only resurfaces a LAUNCHED reply-rate insight after the cooldown, never as a new row", async () => {
+      const company = await seedCompany("reply-decline-cooldown");
+      for (let i = 0; i < 5; i++) await seedMessage(company.id, daysAgo(3), false);
+      for (let i = 0; i < 5; i++) await seedMessage(company.id, daysAgo(20), true);
+
+      await runOpportunityDetection(organizationId);
+      const opp = await prisma.opportunity.findUniqueOrThrow({
+        where: { organizationId_dedupeKey: { organizationId, dedupeKey: "REPLY_RATE_DECLINE" } },
+      });
+      await prisma.opportunity.update({
+        where: { id: opp.id },
+        data: { status: "LAUNCHED", resolvedAt: new Date(), launchedByUserId: "user-1" },
+      });
+
+      const tooSoon = await runOpportunityDetection(organizationId);
+      expect(tooSoon.created).toBe(0);
+      expect(tooSoon.resurfaced).toBe(0);
+      const stillLaunched = await prisma.opportunity.findUniqueOrThrow({ where: { id: opp.id } });
+      expect(stillLaunched.status).toBe("LAUNCHED");
+
+      await prisma.opportunity.update({ where: { id: opp.id }, data: { resolvedAt: daysAgo(30) } });
+      const afterCooldown = await runOpportunityDetection(organizationId);
+      expect(afterCooldown.resurfaced).toBe(1);
+      expect(afterCooldown.created).toBe(0);
+      const resurfaced = await prisma.opportunity.findUniqueOrThrow({ where: { id: opp.id } });
+      expect(resurfaced.status).toBe("DETECTED");
+    });
+  });
+
   describe("sweep lifecycle", () => {
     it("refreshes an existing DETECTED opportunity instead of duplicating it", async () => {
       await seedCompany("refresh-1", { fitScore: 90 });
@@ -350,20 +412,63 @@ describe("runOpportunityDetection (integration)", () => {
       expect(rows[0]?.title).toContain("2 high-fit prospects");
     });
 
-    it("never touches a LAUNCHED opportunity even if the condition still holds", async () => {
-      await seedCompany("launched-1", { fitScore: 90 });
+    it("never touches a LAUNCHED opportunity, and doesn't re-flag its already-batched companies", async () => {
+      const company = await seedCompany("launched-1", { fitScore: 90 });
       await runOpportunityDetection(organizationId);
       const opp = await prisma.opportunity.findUniqueOrThrow({
         where: { organizationId_dedupeKey: { organizationId, dedupeKey: "HIGH_FIT_UNCONTACTED" } },
       });
+
+      // Simulate what executeOpportunity() actually does on Launch: the
+      // company gets grouped into a real Lead List.
+      const list = await prisma.leadList.create({ data: { organizationId, name: "Launched batch" } });
+      await prisma.leadListCompany.create({ data: { leadListId: list.id, companyId: company.id } });
       await prisma.opportunity.update({
         where: { id: opp.id },
-        data: { status: "LAUNCHED", resolvedAt: new Date(), launchedByUserId: "user-1" },
+        data: {
+          status: "LAUNCHED",
+          resolvedAt: new Date(),
+          launchedByUserId: "user-1",
+          executionResult: { leadListId: list.id },
+        },
       });
 
       const result = await runOpportunityDetection(organizationId);
       expect(result.created).toBe(0);
       expect(result.refreshed).toBe(0);
+
+      const stillLaunched = await prisma.opportunity.findUniqueOrThrow({ where: { id: opp.id } });
+      expect(stillLaunched.status).toBe("LAUNCHED");
+    });
+
+    it("creates a new opportunity for new companies after an earlier batch of the same type was launched", async () => {
+      const first = await seedCompany("launched-2", { fitScore: 90 });
+      await runOpportunityDetection(organizationId);
+      const opp = await prisma.opportunity.findUniqueOrThrow({
+        where: { organizationId_dedupeKey: { organizationId, dedupeKey: "HIGH_FIT_UNCONTACTED" } },
+      });
+      const list = await prisma.leadList.create({ data: { organizationId, name: "Launched batch 2" } });
+      await prisma.leadListCompany.create({ data: { leadListId: list.id, companyId: first.id } });
+      await prisma.opportunity.update({
+        where: { id: opp.id },
+        data: {
+          status: "LAUNCHED",
+          resolvedAt: new Date(),
+          launchedByUserId: "user-1",
+          executionResult: { leadListId: list.id },
+        },
+      });
+
+      // A genuinely new company later matches the same condition.
+      const second = await seedCompany("new-high-fit", { fitScore: 92 });
+      const result = await runOpportunityDetection(organizationId);
+      expect(result.created).toBe(1);
+
+      const newRow = await prisma.opportunity.findUniqueOrThrow({
+        where: { organizationId_dedupeKey: { organizationId, dedupeKey: "HIGH_FIT_UNCONTACTED:2" } },
+      });
+      expect(newRow.status).toBe("DETECTED");
+      expect(newRow.relatedCompanyIds).toEqual([second.id]);
 
       const stillLaunched = await prisma.opportunity.findUniqueOrThrow({ where: { id: opp.id } });
       expect(stillLaunched.status).toBe("LAUNCHED");
