@@ -39,7 +39,16 @@ Rules you must follow (non-negotiable):
   have drafted content. Don't re-suggest those — find new keyword and
   content opportunities instead. It's fine to keep a prior keyword only
   if it's still clearly the single most important one for this business,
-  but the majority of keywordSuggestions and contentIdeas should be new.`;
+  but the majority of keywordSuggestions and contentIdeas should be new.
+- Content ideas (docs/outrun/09 "AI CONTENT GENERATOR"): give each idea
+  a contentType matching what it actually is — a genuinely different
+  shape gets generated per type later, so don't default everything to
+  BLOG_POST. Use FAQ_PAGE for a cluster of real questions, META_TITLE/
+  META_DESCRIPTION for a page whose main gap is its own metadata,
+  CALL_TO_ACTION for a conversion-copy gap, FEATURE_DESCRIPTION for a
+  specific feature/service that isn't described anywhere, and
+  LANDING_PAGE/SERVICE_PAGE only when a whole new page is the right unit
+  of work — not every idea should be a blog post.`;
 
 function describePage(signals: WebsiteSignals): string {
   return [

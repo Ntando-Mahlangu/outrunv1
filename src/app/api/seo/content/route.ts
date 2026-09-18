@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getCurrentSession } from "@/lib/session";
 import { getCurrentOrganization } from "@/lib/org";
 import { generateSEOContent } from "@/lib/seo/content";
+import { SEO_CONTENT_TYPES } from "@/lib/seo/content-schema";
 import { UserFacingError, RateLimitError } from "@/lib/errors";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { captureError } from "@/lib/observability";
@@ -16,6 +17,7 @@ const generateSEOContentSchema = z.object({
   headline: z.string({ message: "Missing content idea details." }),
   targetKeyword: z.string({ message: "Missing content idea details." }),
   businessGoal: z.string({ message: "Missing content idea details." }),
+  contentType: z.enum(SEO_CONTENT_TYPES, { message: "Missing content type." }),
 });
 
 export async function POST(request: NextRequest) {
@@ -37,7 +39,7 @@ export async function POST(request: NextRequest) {
 
   const parsed = await parseJsonBody(request, generateSEOContentSchema);
   if (parsed.error) return parsed.error;
-  const { headline, targetKeyword, businessGoal } = parsed.data;
+  const { headline, targetKeyword, businessGoal, contentType } = parsed.data;
 
   try {
     await checkRateLimit(`ai:${organization.id}`, RATE_LIMITS.AI.limit, RATE_LIMITS.AI.windowSeconds);
@@ -45,6 +47,7 @@ export async function POST(request: NextRequest) {
       headline,
       targetKeyword,
       businessGoal,
+      contentType,
     });
     return NextResponse.json({ piece });
   } catch (error) {

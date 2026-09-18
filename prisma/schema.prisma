@@ -781,10 +781,26 @@ model SeoContentPiece {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  targetKeyword   String
-  title           String
-  metaDescription String
-  body            String
+  targetKeyword String
+  // docs/outrun/09 "AI CONTENT GENERATOR" — one of SEO_CONTENT_TYPES
+  // (src/lib/seo/content-schema.ts). Free string validated in app code,
+  // matching Opportunity.type/WebhookDelivery.eventType's precedent, so
+  // a new content type never needs a migration.
+  contentType String @default("BLOG_POST")
+
+  // The long-form shapes (Blog Post/Landing Page/Service Page/FAQ Page)
+  // still use these three directly, unchanged from before content types
+  // existed; short-form shapes (Meta Title/Description, CTA, Feature
+  // Description) leave title/metaDescription null and use body for
+  // FEATURE_DESCRIPTION's short copy, or leave body null too and put
+  // their generated options/faqs in `content`.
+  title           String?
+  metaDescription String?
+  body            String?
+  // Type-specific payload that doesn't fit the three columns above —
+  // { faqs: [...] } for FAQ_PAGE, { options: [...] } for Meta Title/
+  // Description/CTA. Null for the long-form types.
+  content Json?
 
   createdAt DateTime @default(now())
 

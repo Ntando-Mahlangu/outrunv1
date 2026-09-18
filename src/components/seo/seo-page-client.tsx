@@ -13,6 +13,56 @@ import { pollJob } from "@/lib/jobs/poll-job";
 import { SplitHeading } from "@/components/motion/split-heading";
 import { Magnetic } from "@/components/motion/magnetic";
 import type { SEOAnalysisData, LocalSeoPersisted } from "@/lib/seo/schema";
+import { CONTENT_TYPE_LABEL, type SEOContentType } from "@/lib/seo/content-schema";
+
+function renderGeneratedContent(piece: SeoContentPiece) {
+  const contentType = piece.contentType as SEOContentType;
+
+  if (contentType === "FAQ_PAGE") {
+    const faqs = (piece.content as { faqs?: { question: string; answer: string }[] } | null)?.faqs ?? [];
+    return (
+      <>
+        {piece.metaDescription && (
+          <p className="mt-1 text-xs text-[var(--color-text-muted)]">{piece.metaDescription}</p>
+        )}
+        <dl className="mt-3 space-y-3">
+          {faqs.map((faq) => (
+            <div key={faq.question}>
+              <dt className="text-sm font-medium text-[var(--color-text-primary)]">{faq.question}</dt>
+              <dd className="mt-1 text-sm text-[var(--color-text-secondary)]">{faq.answer}</dd>
+            </div>
+          ))}
+        </dl>
+      </>
+    );
+  }
+
+  if (contentType === "META_TITLE" || contentType === "META_DESCRIPTION" || contentType === "CALL_TO_ACTION") {
+    const options = (piece.content as { options?: string[] } | null)?.options ?? [];
+    return (
+      <ul className="mt-3 space-y-1.5">
+        {options.map((option) => (
+          <li
+            key={option}
+            className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-primary)] px-3 py-2 text-sm text-[var(--color-text-secondary)]"
+          >
+            {option}
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  // BLOG_POST / LANDING_PAGE / SERVICE_PAGE / FEATURE_DESCRIPTION
+  return (
+    <>
+      {piece.metaDescription && (
+        <p className="mt-1 text-xs text-[var(--color-text-muted)]">{piece.metaDescription}</p>
+      )}
+      <p className="mt-3 whitespace-pre-wrap text-sm text-[var(--color-text-secondary)]">{piece.body}</p>
+    </>
+  );
+}
 
 type Analysis = {
   healthScore: number;
@@ -96,6 +146,7 @@ export function SeoPageClient({
           headline: idea.headline,
           targetKeyword: idea.targetKeyword,
           businessGoal: idea.businessGoal,
+          contentType: idea.contentType,
         }),
       });
       const body = await res.json();
@@ -314,6 +365,7 @@ export function SeoPageClient({
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Badge tone="accent">{CONTENT_TYPE_LABEL[idea.contentType]}</Badge>
                     <ImpactBadge level={idea.estimatedDifficulty} label={idea.estimatedDifficulty} />
                     <Button
                       size="sm"
@@ -342,15 +394,13 @@ export function SeoPageClient({
                 key={piece.id}
                 className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-4"
               >
-                <p className="text-sm font-medium text-[var(--color-text-primary)]">
-                  {piece.title}
-                </p>
-                <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-                  {piece.metaDescription}
-                </p>
-                <p className="mt-3 whitespace-pre-wrap text-sm text-[var(--color-text-secondary)]">
-                  {piece.body}
-                </p>
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-medium text-[var(--color-text-primary)]">
+                    {piece.title ?? `Target keyword: ${piece.targetKeyword}`}
+                  </p>
+                  <Badge tone="accent">{CONTENT_TYPE_LABEL[piece.contentType as SEOContentType]}</Badge>
+                </div>
+                {renderGeneratedContent(piece)}
               </div>
             ))}
           </div>

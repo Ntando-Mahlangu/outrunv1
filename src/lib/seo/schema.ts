@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SEO_CONTENT_TYPES } from "./content-schema";
 
 const impact = z.enum(["Low", "Medium", "High"]);
 
@@ -39,6 +40,11 @@ const contentIdeaSchema = z.object({
   searchIntent: z.string(),
   businessGoal: z.string(),
   estimatedDifficulty: impact,
+  // docs/outrun/09 "AI CONTENT GENERATOR" — which of the eight content
+  // types this idea actually calls for, so generating a draft from it
+  // produces the right shape (a Blog Post, not a generic template
+  // forced onto an FAQ Page or a Meta Title).
+  contentType: z.enum(SEO_CONTENT_TYPES),
 });
 
 // docs/outrun/09 "LOCAL SEO" — only these four are in scope; "Local
@@ -137,8 +143,16 @@ export const seoAnalysisJsonSchema = {
           searchIntent: { type: "string" },
           businessGoal: { type: "string" },
           estimatedDifficulty: { type: "string", enum: ["Low", "Medium", "High"] },
+          contentType: { type: "string", enum: SEO_CONTENT_TYPES },
         },
-        required: ["headline", "targetKeyword", "searchIntent", "businessGoal", "estimatedDifficulty"],
+        required: [
+          "headline",
+          "targetKeyword",
+          "searchIntent",
+          "businessGoal",
+          "estimatedDifficulty",
+          "contentType",
+        ],
       },
     },
     localSeo: {
