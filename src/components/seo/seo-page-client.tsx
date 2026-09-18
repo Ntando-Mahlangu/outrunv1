@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { SeoContentPiece } from "@prisma/client";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -79,10 +80,12 @@ export function SeoPageClient({
   website: initialWebsite,
   analysis: initialAnalysis,
   contentPieces: initialContentPieces,
+  hasHistory,
 }: {
   website: string | null;
   analysis: Analysis | null;
   contentPieces: SeoContentPiece[];
+  hasHistory: boolean;
 }) {
   const [website, setWebsite] = useState(initialWebsite);
   const [websiteInput, setWebsiteInput] = useState("");
@@ -161,16 +164,23 @@ export function SeoPageClient({
 
   return (
     <div className="animate-fade-in space-y-6">
-      <div>
-        <SplitHeading
-          as="h1"
-          text="SEO"
-          className="text-2xl font-light tracking-tight text-[var(--color-text-primary)]"
-        />
-        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-          Understand your website&apos;s search visibility and generate content
-          to improve it.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <SplitHeading
+            as="h1"
+            text="SEO"
+            className="text-2xl font-light tracking-tight text-[var(--color-text-primary)]"
+          />
+          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+            Understand your website&apos;s search visibility and generate content
+            to improve it.
+          </p>
+        </div>
+        {hasHistory && (
+          <Link href="/seo/history" className="mt-1 text-sm text-[var(--color-accent-text)] hover:underline">
+            Timeline →
+          </Link>
+        )}
       </div>
 
       <FormError message={error} />

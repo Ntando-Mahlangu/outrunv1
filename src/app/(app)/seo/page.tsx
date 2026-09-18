@@ -35,7 +35,7 @@ export default async function SeoPage() {
     );
   }
 
-  const [analysis, contentPieces] = await Promise.all([
+  const [analysis, contentPieces, analysisCount] = await Promise.all([
     prisma.seoAnalysis.findFirst({
       where: { organizationId: organization.id },
       orderBy: { version: "desc" },
@@ -44,6 +44,7 @@ export default async function SeoPage() {
       where: { organizationId: organization.id },
       orderBy: { createdAt: "desc" },
     }),
+    prisma.seoAnalysis.count({ where: { organizationId: organization.id } }),
   ]);
 
   return (
@@ -64,6 +65,7 @@ export default async function SeoPage() {
           : null
       }
       contentPieces={contentPieces}
+      hasHistory={analysisCount > 1}
     />
   );
 }
