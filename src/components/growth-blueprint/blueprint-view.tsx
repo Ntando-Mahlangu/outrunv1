@@ -6,6 +6,10 @@ import type { BusinessSnapshot, GrowthBlueprintData, WebsiteAnalysis } from "@/l
 type BlueprintFields = {
   version: number;
   growthScore: number;
+  createdAt: Date;
+  /** The previous version's score, when one exists — undefined/null for
+   * the very first Blueprint, never a fabricated baseline. */
+  previousGrowthScore?: number | null;
   executiveSummary: string;
   confidenceNotes: string;
   businessSnapshot: BusinessSnapshot;
@@ -65,7 +69,12 @@ export function BlueprintView({
       </div>
 
       <Card interactive className="animate-fade-in flex flex-col items-center gap-6 sm:flex-row sm:items-start">
-        <ScoreGauge score={blueprint.growthScore} label="Growth Score" />
+        <ScoreGauge
+          score={blueprint.growthScore}
+          label="Growth Score"
+          previousScore={blueprint.previousGrowthScore}
+          updatedAt={blueprint.createdAt}
+        />
         <div className="flex-1 space-y-2">
           <h2 className="text-lg font-medium text-[var(--color-text-primary)]">
             Business Summary

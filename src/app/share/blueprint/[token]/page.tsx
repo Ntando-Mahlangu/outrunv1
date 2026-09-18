@@ -21,6 +21,12 @@ export default async function SharedBlueprintPage({
   });
   if (!blueprint) notFound();
 
+  const previousBlueprint = await prisma.growthBlueprint.findFirst({
+    where: { organizationId: organization.id, version: { lt: blueprint.version } },
+    orderBy: { version: "desc" },
+    select: { growthScore: true },
+  });
+
   return (
     <main className="min-h-screen bg-[var(--color-bg-primary)] px-4 py-16">
       <div className="mx-auto max-w-4xl">
@@ -32,6 +38,8 @@ export default async function SharedBlueprintPage({
           blueprint={{
             version: blueprint.version,
             growthScore: blueprint.growthScore,
+            createdAt: blueprint.createdAt,
+            previousGrowthScore: previousBlueprint?.growthScore,
             executiveSummary: blueprint.executiveSummary,
             confidenceNotes: blueprint.confidenceNotes,
             businessSnapshot: blueprint.businessSnapshot as BusinessSnapshot,

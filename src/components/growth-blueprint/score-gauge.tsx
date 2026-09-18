@@ -1,4 +1,5 @@
 import { CountUp } from "@/components/motion/count-up";
+import { cn } from "@/lib/cn";
 
 const SIZE = 176;
 const STROKE = 12;
@@ -11,9 +12,22 @@ function scoreColor(score: number) {
   return "var(--color-error)";
 }
 
-export function ScoreGauge({ score, label }: { score: number; label?: string }) {
+export function ScoreGauge({
+  score,
+  label,
+  previousScore,
+  updatedAt,
+}: {
+  score: number;
+  label?: string;
+  /** The prior version's score, when one exists — omitted entirely (not
+   * shown as "no change") when this is the first Blueprint ever generated. */
+  previousScore?: number | null;
+  updatedAt?: Date;
+}) {
   const offset = CIRCUMFERENCE * (1 - score / 100);
   const color = scoreColor(score);
+  const delta = previousScore != null ? score - previousScore : null;
 
   return (
     <div className="flex flex-col items-center gap-3">
@@ -55,6 +69,21 @@ export function ScoreGauge({ score, label }: { score: number; label?: string }) 
       </div>
       {label && (
         <p className="text-sm font-medium text-[var(--color-text-secondary)]">{label}</p>
+      )}
+      {(delta !== null || updatedAt) && (
+        <div className="flex flex-col items-center gap-0.5 text-xs text-[var(--color-text-muted)]">
+          {delta !== null && (
+            <span
+              className={cn(
+                delta > 0 && "text-[var(--color-success)]",
+                delta < 0 && "text-[var(--color-error)]",
+              )}
+            >
+              {delta > 0 ? "▲" : delta < 0 ? "▼" : "–"} {Math.abs(delta)} vs previous ({previousScore})
+            </span>
+          )}
+          {updatedAt && <span>Last updated {updatedAt.toLocaleDateString()}</span>}
+        </div>
       )}
     </div>
   );

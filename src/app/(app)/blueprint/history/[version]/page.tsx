@@ -23,6 +23,15 @@ export default async function BlueprintHistoryVersionPage({
   });
   if (!blueprint) notFound();
 
+  // Relative to the version being viewed, not the org's latest — a
+  // historical version's trend should compare against what came right
+  // before it, not against a version generated much later.
+  const previousBlueprint = await prisma.growthBlueprint.findFirst({
+    where: { organizationId: organization.id, version: { lt: blueprint.version } },
+    orderBy: { version: "desc" },
+    select: { growthScore: true },
+  });
+
   return (
     <div className="py-16">
       <div className="mx-auto max-w-4xl space-y-4">
@@ -43,6 +52,8 @@ export default async function BlueprintHistoryVersionPage({
           blueprint={{
             version: blueprint.version,
             growthScore: blueprint.growthScore,
+            createdAt: blueprint.createdAt,
+            previousGrowthScore: previousBlueprint?.growthScore,
             executiveSummary: blueprint.executiveSummary,
             confidenceNotes: blueprint.confidenceNotes,
             businessSnapshot: blueprint.businessSnapshot as BusinessSnapshot,

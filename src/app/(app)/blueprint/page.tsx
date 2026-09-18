@@ -35,6 +35,14 @@ export default async function BlueprintPage({
     prisma.growthBlueprint.count({ where: { organizationId: organization.id } }),
   ]);
 
+  const previousBlueprint = blueprint
+    ? await prisma.growthBlueprint.findFirst({
+        where: { organizationId: organization.id, version: { lt: blueprint.version } },
+        orderBy: { version: "desc" },
+        select: { growthScore: true },
+      })
+    : null;
+
   // Shows its own generate/pending state directly, rather than bouncing to
   // Dashboard — landing here from the sidebar with no Blueprint yet used to
   // silently redirect away, which read as "this link is broken."
@@ -119,6 +127,8 @@ export default async function BlueprintPage({
           blueprint={{
             version: blueprint.version,
             growthScore: blueprint.growthScore,
+            createdAt: blueprint.createdAt,
+            previousGrowthScore: previousBlueprint?.growthScore,
             executiveSummary: blueprint.executiveSummary,
             confidenceNotes: blueprint.confidenceNotes,
             businessSnapshot: blueprint.businessSnapshot as BusinessSnapshot,
