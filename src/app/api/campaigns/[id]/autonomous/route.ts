@@ -39,6 +39,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const campaign = await setAutonomousSending(
       organization.id,
       membership.role,
+      organization.planTier,
       id,
       enabled,
       Math.round(dailyLimit),

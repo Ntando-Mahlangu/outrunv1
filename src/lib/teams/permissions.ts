@@ -8,11 +8,22 @@ export function canManageTeam(role: MembershipRole): boolean {
   return TEAM_MANAGERS.includes(role);
 }
 
-// Same Owner/Admin set as canManageTeam (doc 14 lists "Campaigns" under
-// Admin permissions) — named separately so call sites read clearly, since
-// this gates Autonomous Growth Mode (real unsupervised sends), not team
-// membership.
+// docs/outrun/14 "PERMISSIONS" lists Campaigns under both Admin's and
+// Manager's permissions — Member ("Assigned Work") and Viewer ("Read
+// Only") are deliberately excluded. Gates creating/pausing/duplicating
+// campaigns and editing brand voice; NOT autonomous sending, which is a
+// materially more sensitive unsupervised action — see canSendAutonomously.
+const CAMPAIGN_MANAGERS: MembershipRole[] = ["OWNER", "ADMIN", "MANAGER"];
+
 export function canManageCampaigns(role: MembershipRole): boolean {
+  return CAMPAIGN_MANAGERS.includes(role);
+}
+
+// Stricter than canManageCampaigns: doc 14's permission table doesn't grant
+// Manager real unsupervised-send authority the way it grants them ordinary
+// campaign management, and Autonomous Growth Mode sends without a human
+// reviewing each message — same Owner/Admin bar as billing and API keys.
+export function canSendAutonomously(role: MembershipRole): boolean {
   return TEAM_MANAGERS.includes(role);
 }
 

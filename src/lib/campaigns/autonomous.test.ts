@@ -1,6 +1,7 @@
 import { describe, expect, it, afterEach } from "vitest";
 import { prisma } from "@/lib/prisma";
-import { shouldAutoPauseForFailures, runAutonomousSendTick } from "./autonomous";
+import { UserFacingError } from "@/lib/errors";
+import { shouldAutoPauseForFailures, runAutonomousSendTick, setAutonomousSending } from "./autonomous";
 
 describe("shouldAutoPauseForFailures", () => {
   it("never pauses below the minimum sample size, even at 100% failure", () => {
@@ -59,5 +60,45 @@ describe("runAutonomousSendTick (integration)", () => {
     // regardless of how many other (unrelated) campaigns exist in the DB.
     const after = await prisma.campaign.findUniqueOrThrow({ where: { id: campaign.id } });
     expect(after.lastAutonomousSendAt).toBeNull();
+  });
+});
+
+describe("setAutonomousSending (integration)", () => {
+  let orgIds: string[] = [];
+
+  afterEach(async () => {
+    await prisma.organization.deleteMany({ where: { id: { in: orgIds } } });
+    orgIds = [];
+  });
+
+  async function seedCampaign(planTier: "FREE" | "STARTER" | "GROWTH" | "UNLIMITED") {
+    const org = await prisma.organization.create({
+      data: { name: "Autonomous Sending Test Org", planTier },
+    });
+    orgIds.push(org.id);
+    const campaign = await prisma.campaign.create({
+      data: { organizationId: org.id, name: "Test Campaign", objective: "Test", status: "READY" },
+    });
+    return { organizationId: org.id, campaignId: campaign.id };
+  }
+
+  it("rejects a Manager trying to enable autonomous sending, even on the Unlimited plan", async () => {
+    const { organizationId, campaignId } = await seedCampaign("UNLIMITED");
+    await expect(
+      setAutonomousSending(organizationId, "MANAGER", "UNLIMITED", campaignId, true, 10),
+    ).rejects.toThrow(UserFacingError);
+  });
+
+  it("rejects enabling autonomous sending below the Unlimited plan", async () => {
+    const { organizationId, campaignId } = await seedCampaign("GROWTH");
+    await expect(
+      setAutonomousSending(organizationId, "OWNER", "GROWTH", campaignId, true, 10),
+    ).rejects.toThrow(/Unlimited plan/);
+  });
+
+  it("allows disabling autonomous sending regardless of plan tier", async () => {
+    const { organizationId, campaignId } = await seedCampaign("FREE");
+    const campaign = await setAutonomousSending(organizationId, "OWNER", "FREE", campaignId, false, 10);
+    expect(campaign.autonomousSendEnabled).toBe(false);
   });
 });

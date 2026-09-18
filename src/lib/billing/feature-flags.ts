@@ -10,6 +10,7 @@ export const FEATURE_FLAGS = {
   TEAM_WORKSPACES: "team.workspaces",
   PROSPECTS_EXPORT: "prospects.export",
   API_ACCESS: "api.access",
+  AUTONOMOUS_SENDING: "campaigns.autonomous_sending",
 } as const;
 
 export type FeatureFlag = (typeof FEATURE_FLAGS)[keyof typeof FEATURE_FLAGS];
@@ -42,6 +43,9 @@ const FLAG_CONFIG: Record<FeatureFlag, FlagConfig> = {
   [FEATURE_FLAGS.TEAM_WORKSPACES]: { tiers: ["FREE", "STARTER", "GROWTH", "UNLIMITED"] },
   [FEATURE_FLAGS.PROSPECTS_EXPORT]: { tiers: ["STARTER", "GROWTH", "UNLIMITED"] },
   [FEATURE_FLAGS.API_ACCESS]: { tiers: ["GROWTH", "UNLIMITED"] },
+  // docs/outrun/07 pitches Autonomous Growth Mode (real unsupervised
+  // sending) as an Unlimited-plan differentiator.
+  [FEATURE_FLAGS.AUTONOMOUS_SENDING]: { tiers: ["UNLIMITED"] },
 };
 
 /**

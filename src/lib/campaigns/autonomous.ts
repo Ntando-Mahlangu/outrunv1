@@ -1,4 +1,4 @@
-import type { Campaign, MembershipRole } from "@prisma/client";
+import type { Campaign, MembershipRole, PlanTier } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { UserFacingError } from "@/lib/errors";
 import { sendOutreachMessage } from "@/lib/outreach/send";
@@ -6,7 +6,8 @@ import { isEmailSendingConfigured } from "@/lib/email";
 import { logEvent, EventType } from "@/lib/memory/log-event";
 import { createNotification, NotificationType } from "@/lib/notifications/create-notification";
 import { captureError } from "@/lib/observability";
-import { canManageCampaigns } from "@/lib/teams/permissions";
+import { canSendAutonomously } from "@/lib/teams/permissions";
+import { isFeatureEnabled, FEATURE_FLAGS } from "@/lib/billing/feature-flags";
 
 const MIN_DAILY_LIMIT = 1;
 const MAX_DAILY_LIMIT = 500;
@@ -38,11 +39,12 @@ export function shouldAutoPauseForFailures(attempted: number, failed: number): b
 export async function setAutonomousSending(
   organizationId: string,
   actingRole: MembershipRole,
+  planTier: PlanTier,
   campaignId: string,
   enabled: boolean,
   dailyLimit: number,
 ) {
-  if (!canManageCampaigns(actingRole)) {
+  if (!canSendAutonomously(actingRole)) {
     throw new UserFacingError("Only workspace owners and admins can change autonomous sending.");
   }
   if (!Number.isInteger(dailyLimit) || dailyLimit < MIN_DAILY_LIMIT || dailyLimit > MAX_DAILY_LIMIT) {
@@ -54,6 +56,9 @@ export async function setAutonomousSending(
   });
   if (!campaign) {
     throw new UserFacingError("That campaign could not be found.");
+  }
+  if (enabled && !isFeatureEnabled(planTier, FEATURE_FLAGS.AUTONOMOUS_SENDING, organizationId)) {
+    throw new UserFacingError("Autonomous sending is an Unlimited plan feature — upgrade to turn it on.");
   }
   if (enabled && !isEmailSendingConfigured()) {
     throw new UserFacingError(
