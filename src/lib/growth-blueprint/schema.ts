@@ -44,6 +44,14 @@ const bottleneckSchema = z.object({
   howFixingItChangesTheBusiness: z.string(),
 });
 
+// Which in-app area this action belongs to — read directly by
+// getMissionActionHref() so "Start Today's Mission" routes somewhere
+// actually relevant, instead of guessing from the free-text action/reason
+// with a keyword match. Optional in the inferred TS type (not in the
+// JSON schema the model must satisfy) since older, already-persisted
+// Blueprints were generated before this field existed.
+const actionArea = z.enum(["campaigns", "seo", "prospects", "blueprint", "other"]);
+
 const opportunitySchema = z.object({
   title: z.string(),
   description: z.string(),
@@ -53,6 +61,7 @@ const opportunitySchema = z.object({
   confidence: z.number().min(0).max(100),
   supportingEvidence: z.string(),
   recommendedAction: z.string(),
+  actionArea: actionArea.optional(),
 });
 
 const growthStrategySchema = z.object({
@@ -97,6 +106,7 @@ const roadmapItemSchema = z.object({
   reason: z.string(),
   estimatedTime: z.string(),
   expectedImpact: impact,
+  actionArea: actionArea.optional(),
 });
 
 // docs/outrun/05 "BUSINESS SNAPSHOT" — most of its fields (target market,
@@ -278,6 +288,12 @@ export const growthBlueprintJsonSchema = {
           confidence: { type: "integer", minimum: 0, maximum: 100 },
           supportingEvidence: { type: "string" },
           recommendedAction: { type: "string" },
+          actionArea: {
+            type: "string",
+            enum: ["campaigns", "seo", "prospects", "blueprint", "other"],
+            description:
+              "Which part of the app this opportunity is best acted on in. 'other' only if none of the specific areas fit.",
+          },
         },
         required: [
           "title",
@@ -288,6 +304,7 @@ export const growthBlueprintJsonSchema = {
           "confidence",
           "supportingEvidence",
           "recommendedAction",
+          "actionArea",
         ],
       },
     },
@@ -387,8 +404,14 @@ export const growthBlueprintJsonSchema = {
           reason: { type: "string" },
           estimatedTime: { type: "string" },
           expectedImpact: { type: "string", enum: ["Low", "Medium", "High"] },
+          actionArea: {
+            type: "string",
+            enum: ["campaigns", "seo", "prospects", "blueprint", "other"],
+            description:
+              "Which part of the app this action is best carried out in. 'other' only if none of the specific areas fit.",
+          },
         },
-        required: ["horizon", "action", "reason", "estimatedTime", "expectedImpact"],
+        required: ["horizon", "action", "reason", "estimatedTime", "expectedImpact", "actionArea"],
       },
     },
     websiteAnalysis: {

@@ -49,7 +49,20 @@ describe("getTodaysMission", () => {
 });
 
 describe("getMissionActionHref", () => {
-  it("routes campaign-related missions to /campaigns", () => {
+  it("prefers the structured actionArea over any keyword match in the text", () => {
+    const href = getMissionActionHref({
+      action: "Review your pricing", // would keyword-match nothing / fall through to /blueprint
+      reason: "x",
+      estimatedTime: null,
+      expectedImpact: "Medium",
+      confidence: null,
+      source: "roadmap",
+      actionArea: "prospects",
+    });
+    expect(href).toBe("/prospects");
+  });
+
+  it("falls back to a keyword match on older missions with no actionArea", () => {
     const href = getMissionActionHref({
       action: "Launch your Manufacturing Campaign",
       reason: "x",
@@ -57,11 +70,12 @@ describe("getMissionActionHref", () => {
       expectedImpact: "High",
       confidence: null,
       source: "roadmap",
+      actionArea: undefined,
     });
     expect(href).toBe("/campaigns");
   });
 
-  it("routes SEO/website missions to /seo", () => {
+  it("keyword fallback: routes SEO/website missions to /seo", () => {
     const href = getMissionActionHref({
       action: "Improve your website's SEO",
       reason: "x",
@@ -69,11 +83,12 @@ describe("getMissionActionHref", () => {
       expectedImpact: "Medium",
       confidence: null,
       source: "roadmap",
+      actionArea: undefined,
     });
     expect(href).toBe("/seo");
   });
 
-  it("falls back to /blueprint for anything unrecognized", () => {
+  it("keyword fallback: routes to /blueprint for anything unrecognized", () => {
     const href = getMissionActionHref({
       action: "Review your pricing",
       reason: "x",
@@ -81,6 +96,7 @@ describe("getMissionActionHref", () => {
       expectedImpact: "Medium",
       confidence: null,
       source: "roadmap",
+      actionArea: undefined,
     });
     expect(href).toBe("/blueprint");
   });

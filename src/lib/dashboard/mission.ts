@@ -8,6 +8,7 @@ export type TodaysMission = {
   expectedImpact: GrowthBlueprintData["roadmap"][number]["expectedImpact"];
   confidence: number | null;
   source: "roadmap" | "opportunity";
+  actionArea: GrowthBlueprintData["roadmap"][number]["actionArea"];
 };
 
 /**
@@ -29,6 +30,7 @@ export function getTodaysMission(blueprint: GrowthBlueprint): TodaysMission | nu
       expectedImpact: todayItem.expectedImpact,
       confidence: null,
       source: "roadmap",
+      actionArea: todayItem.actionArea,
     };
   }
 
@@ -46,16 +48,29 @@ export function getTodaysMission(blueprint: GrowthBlueprint): TodaysMission | nu
     expectedImpact: topOpportunity.estimatedImpact,
     confidence: topOpportunity.confidence,
     source: "opportunity",
+    actionArea: topOpportunity.actionArea,
   };
 }
 
+const ACTION_AREA_HREF: Record<NonNullable<TodaysMission["actionArea"]>, string> = {
+  campaigns: "/campaigns",
+  seo: "/seo",
+  prospects: "/prospects",
+  blueprint: "/blueprint",
+  other: "/blueprint",
+};
+
 /**
  * Where "Start Today's Mission" (docs/outrun/10 "HOME SCREEN") should
- * send the user — a lightweight keyword match against the mission's own
- * text rather than a fabricated task type, since the Blueprint doesn't
- * tag roadmap items with a category.
+ * send the user. Blueprints generated after actionArea was added to the
+ * schema tag every roadmap item/opportunity with it directly, which is
+ * far more reliable than guessing from free text — the keyword match
+ * below only exists as a fallback for Blueprints generated before that
+ * field existed.
  */
 export function getMissionActionHref(mission: TodaysMission): string {
+  if (mission.actionArea) return ACTION_AREA_HREF[mission.actionArea];
+
   const text = `${mission.action} ${mission.reason}`.toLowerCase();
   if (text.includes("campaign")) return "/campaigns";
   if (text.includes("seo") || text.includes("website")) return "/seo";
