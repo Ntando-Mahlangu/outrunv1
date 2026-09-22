@@ -88,26 +88,6 @@ export default function SignUpPage() {
           <CardDescription>It only takes a few minutes.</CardDescription>
         </CardHeader>
 
-        <label className="mb-4 flex items-start gap-2 text-xs text-[var(--color-text-secondary)]">
-          <input
-            type="checkbox"
-            checked={agreedToTerms}
-            onChange={(e) => setAgreedToTerms(e.target.checked)}
-            className="mt-0.5 size-3.5 shrink-0 accent-[var(--color-accent)]"
-          />
-          <span>
-            I agree to the{" "}
-            <Link href="/terms" target="_blank" className="text-[var(--color-accent-text)] underline">
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link href="/privacy" target="_blank" className="text-[var(--color-accent-text)] underline">
-              Privacy Policy
-            </Link>
-            .
-          </span>
-        </label>
-
         {useMagicLink ? (
           <MagicLinkPanel initialEmail={email} disabled={!agreedToTerms} />
         ) : (
@@ -166,6 +146,26 @@ export default function SignUpPage() {
             </Button>
           </form>
         )}
+
+        <label className="mt-4 flex items-start gap-2 text-xs text-[var(--color-text-secondary)]">
+          <input
+            type="checkbox"
+            checked={agreedToTerms}
+            onChange={(e) => setAgreedToTerms(e.target.checked)}
+            className="mt-0.5 size-3.5 shrink-0 accent-[var(--color-accent)]"
+          />
+          <span>
+            I agree to the{" "}
+            <Link href="/terms" target="_blank" className="text-[var(--color-accent-text)] underline">
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" target="_blank" className="text-[var(--color-accent-text)] underline">
+              Privacy Policy
+            </Link>
+            .
+          </span>
+        </label>
 
         <button
           type="button"
