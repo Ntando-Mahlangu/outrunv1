@@ -21,7 +21,7 @@ export const PLANS: Record<
     priceLabel: "$0",
     features: [
       "1 Growth Blueprint",
-      "10 company searches",
+      "20 company searches", // TEMP for ad recording — revert to 10
       "5 AI company reports",
       "5 outreach generations",
       "1 campaign",
