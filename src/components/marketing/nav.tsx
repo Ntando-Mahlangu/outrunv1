@@ -2,6 +2,7 @@ import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { Logo } from "@/components/brand/logo";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 export function MarketingNav() {
   return (
@@ -25,6 +26,7 @@ export function MarketingNav() {
         </nav>
 
         <div className="flex items-center gap-4">
+          <ThemeToggle />
           <Link
             href="/sign-in"
             className="hidden text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] sm:block"

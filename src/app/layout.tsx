@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { headers, cookies } from "next/headers";
 import { Manrope, Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
@@ -6,6 +7,7 @@ import { getLocale, getMessages } from "next-intl/server";
 import { AnalyticsScripts } from "@/components/analytics/analytics-scripts";
 import { CookieConsentBanner } from "@/components/legal/cookie-consent-banner";
 import { COOKIE_CONSENT_COOKIE, isCookieConsent } from "@/lib/cookie-consent";
+import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
 // Real, self-hosted typefaces (docs/outrun/01) — replaces the previous
@@ -78,8 +80,20 @@ export default async function RootLayout({
     <html
       lang={locale}
       className={`${bodyFont.variable} ${displayFont.variable} ${monoFont.variable}`}
+      // ThemeInitScript sets data-theme on this element before hydration,
+      // which the server-rendered markup can't know about (it doesn't
+      // have access to the visitor's localStorage) — an expected
+      // mismatch React would otherwise warn about on every dark-theme
+      // page load.
+      suppressHydrationWarning
     >
       <body>
+        {/* Sets data-theme on <html> before first paint if the visitor
+            previously chose dark — beforeInteractive blocks rendering
+            until this runs, so there's no flash of the light theme. */}
+        <Script id="theme-init" strategy="beforeInteractive" nonce={nonce}>
+          {THEME_INIT_SCRIPT}
+        </Script>
         <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>
         {consent === "accepted" && <AnalyticsScripts nonce={nonce} />}
         <CookieConsentBanner initialConsent={consent} />

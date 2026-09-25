@@ -18,7 +18,7 @@ export function LegalPage({
           className="inline-flex items-center gap-2 text-sm text-[var(--color-accent-text)] hover:underline"
         >
           <span aria-hidden>←</span>
-          <Image src="/logo-mark.png" alt="" width={16} height={16} className="invert" />
+          <Image src="/logo-mark.png" alt="" width={16} height={16} className="brand-logo-mark" />
           Outrun
         </Link>
 

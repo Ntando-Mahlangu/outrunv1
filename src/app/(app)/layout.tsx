@@ -7,6 +7,7 @@ import { WorkspaceSwitcher } from "@/components/team/workspace-switcher";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { GlobalSearch } from "@/components/dashboard/global-search";
 import { GlobalChatWidget } from "@/components/growth-partner/global-chat-widget";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Logo } from "@/components/brand/logo";
 import { GenerativeLattice } from "@/components/motion/backgrounds";
 import { getRecentChatHistory } from "@/lib/growth-partner/chat";
@@ -67,6 +68,7 @@ export default async function DashboardLayout({
           )}
           {organization && <NotificationBell />}
           {organization && <GlobalChatWidget initialMessages={chatHistory} />}
+          <ThemeToggle />
           <span className="text-sm text-[var(--color-text-secondary)]">
             {session.user.name}
           </span>
