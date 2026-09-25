@@ -32,14 +32,18 @@ export function LiquidMesh({ className = "" }: { className?: string }) {
       {blobs.map((b, i) => (
         <motion.div
           key={i}
-          className="absolute opacity-25 blur-3xl"
+          className="absolute opacity-30 blur-3xl"
           style={{
             width: `${b.size}rem`,
             height: `${b.size}rem`,
             top: b.top,
             left: b.left,
             background: `radial-gradient(circle, ${b.color} 0%, transparent 70%)`,
-            mixBlendMode: "screen",
+            // "screen" only reads against a dark canvas (it can only ever
+            // lighten, so it washes out to invisible on a light background)
+            // — "multiply" is the light-theme equivalent, tinting/darkening
+            // instead of glowing.
+            mixBlendMode: "multiply",
           }}
           animate={
             reduceMotion

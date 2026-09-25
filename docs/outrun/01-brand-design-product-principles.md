@@ -73,28 +73,32 @@ Every page should look like software worth paying for.
 ________________________________________
 COLOUR PALETTE
 Primary Background
-Dark Charcoal
-#181818
+Light Grey
+#F7F8FA
 Secondary Background
-#222222
+#EEF0F3
 Cards
-#2B2B2B
+#FFFFFF
 Borders
-#3A3A3A
+#E2E4E9
 Primary Text
-#F5F5F5
+#16181D
 Secondary Text
-#B8B8B8
+#4B4F58
 Muted Text
-#909090
+#767A85
 Success
-#3DDC84
+#16A34A
 Warning
-#F4B400
+#D97706
 Error
-#EA4335
+#DC2626
 Primary Accent
-Use the Outrun brand colour derived from the logo.
+Light Blue
+#2563EB
+Secondary accent (gradients only)
+Cyan
+#0891B2
 Accent colours should be used sparingly.
 The interface should feel premium rather than colourful.
 ________________________________________

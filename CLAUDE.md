@@ -62,9 +62,10 @@ The full V1 specification is split into focused documents under
 - **Security by default.** Multi-tenant isolation, encryption at rest/in
   transit, server-side authorization on every request — never trust the
   frontend (`15-security-devops-deployment.md`).
-- **Design system.** Dark charcoal (#181818) premium theme per
-  `01-brand-design-product-principles.md` — calm, minimal, confident. Never
-  ship a raw "No data" empty state or a stack trace in an error message.
+- **Design system.** Light grey/white (#F7F8FA) premium theme with a
+  light-blue accent (#2563EB) per `01-brand-design-product-principles.md` —
+  calm, minimal, confident. Never ship a raw "No data" empty state or a
+  stack trace in an error message.
 
 When a decision isn't covered explicitly, resolve it using the Constitution's
 final test: *"If this were the only product this business owner used every

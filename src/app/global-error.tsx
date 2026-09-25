@@ -34,21 +34,21 @@ export default function GlobalError({
             flexDirection: "column",
             gap: "1rem",
             padding: "1.5rem",
-            backgroundColor: "#181818",
-            color: "#f5f5f5",
+            backgroundColor: "#f7f8fa",
+            color: "#16181d",
             fontFamily: "system-ui, sans-serif",
             textAlign: "center",
           }}
         >
           <h1 style={{ fontSize: "1.5rem", fontWeight: 300 }}>Something went wrong</h1>
-          <p style={{ color: "#b8b8b8", maxWidth: "28rem" }}>
+          <p style={{ color: "#4b4f58", maxWidth: "28rem" }}>
             We hit an unexpected error. It&apos;s been logged and we&apos;re looking into it —
             try again in a moment.
           </p>
           <button
             onClick={reset}
             style={{
-              backgroundColor: "#6e56cf",
+              backgroundColor: "#2563eb",
               color: "white",
               border: "none",
               borderRadius: "8px",
